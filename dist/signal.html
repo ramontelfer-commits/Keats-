@@ -1,0 +1,1475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Signal — Social Media Performance Review</title>
+<style>
+/* Signal — theme-aware dashboard styling. Dark-first, light via prefers-color-scheme. */
+:root {
+  --bg: #0e1014;
+  --panel: #171a21;
+  --panel-2: #1e222b;
+  --border: #262b36;
+  --text: #eef1f6;
+  --text-dim: #9aa3b2;
+  --accent: #6ea8fe;
+  --accent-fade: rgba(110, 168, 254, 0.14);
+  --grid: #2a3040;
+  --bar-dim: #39435a;
+  --good: #3ecf8e;
+  --warn: #f5a623;
+  --tip: #6ea8fe;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  --radius: 14px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6fa;
+    --panel: #ffffff;
+    --panel-2: #f0f3f8;
+    --border: #e2e7ef;
+    --text: #1a1f29;
+    --text-dim: #626c7e;
+    --accent: #2f6fed;
+    --accent-fade: rgba(47, 111, 237, 0.10);
+    --grid: #dbe1ec;
+    --bar-dim: #c3ccdd;
+    --shadow: 0 1px 2px rgba(20,30,50,.06), 0 8px 24px rgba(20,30,50,.08);
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; padding: 18px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  font-size: 26px; width: 42px; height: 42px; display: grid; place-items: center;
+  background: var(--accent); color: #fff; border-radius: 11px;
+}
+.brand h1 { margin: 0; font-size: 20px; letter-spacing: -.02em; }
+.tagline { margin: 0; font-size: 12.5px; color: var(--text-dim); }
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  padding: 9px 15px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--panel-2); color: var(--text); transition: .15s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+
+.paste-area {
+  display: flex; gap: 10px; padding: 14px clamp(16px, 4vw, 40px);
+  align-items: stretch; border-bottom: 1px solid var(--border);
+}
+.paste-area textarea {
+  flex: 1; min-height: 90px; resize: vertical; font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px; padding: 10px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--text);
+}
+.hidden { display: none !important; }
+
+.parse-note {
+  margin: 0; padding: 8px clamp(16px, 4vw, 40px); color: var(--text-dim);
+  font-size: 13px; min-height: 20px;
+}
+
+.platform-tabs {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 4px clamp(16px, 4vw, 40px) 12px;
+}
+.tab {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  padding: 7px 14px 7px 13px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--panel); color: var(--text-dim);
+  display: inline-flex; align-items: center; gap: 7px; transition: .15s;
+}
+.tab::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--dot, var(--text-dim)); display: inline-block;
+}
+.tab:first-child::before { display: none; }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.empty-state {
+  max-width: 640px; margin: 60px auto; padding: 0 24px; text-align: center;
+}
+.empty-state h2 { font-size: 24px; margin-bottom: 8px; }
+.empty-state p { color: var(--text-dim); }
+.empty-state .hint { font-size: 12.5px; margin-top: 20px; }
+code {
+  background: var(--panel-2); padding: 2px 6px; border-radius: 5px;
+  font-family: ui-monospace, Menlo, monospace; font-size: .9em;
+}
+
+.dashboard {
+  max-width: 1120px; margin: 0 auto; padding: 8px clamp(16px, 4vw, 40px) 60px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 780px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+}
+.panel-title {
+  margin: 0 0 16px; font-size: 15px; font-weight: 700; letter-spacing: -.01em;
+}
+.panel-title .sub { color: var(--text-dim); font-weight: 500; font-size: 12.5px; margin-left: 6px; }
+
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;
+}
+.kpi {
+  background: var(--panel-2); border-radius: 11px; padding: 16px;
+  border: 1px solid var(--border);
+}
+.kpi-value { font-size: 26px; font-weight: 750; letter-spacing: -.03em; }
+.kpi-label { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+.kpi-sub { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+
+.insights { display: grid; gap: 10px; }
+.insight {
+  display: flex; gap: 12px; padding: 13px 15px; border-radius: 11px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-left: 3px solid var(--tip);
+}
+.insight-good { border-left-color: var(--good); }
+.insight-warn { border-left-color: var(--warn); }
+.insight-tip  { border-left-color: var(--tip); }
+.insight-badge {
+  flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 13px; font-weight: 800; color: #fff; margin-top: 1px;
+}
+.insight-good .insight-badge { background: var(--good); }
+.insight-warn .insight-badge { background: var(--warn); }
+.insight-tip  .insight-badge { background: var(--tip); }
+.insight h4 { margin: 0 0 3px; font-size: 14px; }
+.insight p { margin: 0; font-size: 13px; color: var(--text-dim); }
+
+.chart-holder { overflow-x: auto; }
+.chart { display: block; }
+.c-label { fill: var(--text); font-size: 13px; }
+.c-value { fill: var(--text); font-size: 12px; font-weight: 700; }
+.c-axis { fill: var(--text-dim); font-size: 11px; }
+.donut-total { fill: var(--text); font-size: 28px; font-weight: 800; }
+.empty { color: var(--text-dim); font-size: 13px; text-align: center; padding: 40px 0; }
+
+.donut-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.legend li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.legend b { margin-left: auto; color: var(--text-dim); font-weight: 700; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+
+.table-holder { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--text-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+tbody tr:last-child td { border-bottom: none; }
+td:first-child { display: flex; align-items: center; gap: 8px; }
+
+.top-posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.top-posts li {
+  display: flex; align-items: center; gap: 12px; padding: 11px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.top-posts li:last-child { border-bottom: none; }
+.rank { font-weight: 800; color: var(--text-dim); width: 22px; text-align: center; flex: none; }
+.post-main { flex: 1; min-width: 0; }
+.post-main a, .post-main span { font-weight: 600; font-size: 14px; color: var(--text); text-decoration: none; }
+.post-main a:hover { color: var(--accent); text-decoration: underline; }
+.post-meta { font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.post-stats { font-size: 13px; color: var(--text-dim); text-align: right; flex: none; }
+.post-stats b { color: var(--text); }
+
+.breakout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.breakout-card {
+  display: flex; align-items: center; gap: 14px; padding: 14px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 11px;
+}
+.breakout-mult { font-size: 22px; font-weight: 800; color: var(--accent); flex: none; }
+.breakout-title { font-weight: 600; font-size: 13.5px; }
+
+.footer {
+  text-align: center; color: var(--text-dim); font-size: 12.5px;
+  padding: 24px; border-top: 1px solid var(--border);
+}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+      <span class="logo">◎</span>
+      <div>
+        <h1>Signal</h1>
+        <p class="tagline">Social media performance review</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="load-mine" class="btn ghost">My TikTok</button>
+      <button id="load-sample" class="btn ghost">Sample data</button>
+      <button id="paste-toggle" class="btn ghost">Paste CSV</button>
+      <label class="btn primary">
+        Import CSV
+        <input id="file-input" type="file" accept=".csv,text/csv" hidden />
+      </label>
+    </div>
+  </header>
+
+  <div id="paste-area" class="paste-area hidden">
+    <textarea id="paste-text" placeholder="Paste CSV rows here (platform,account,published_at,title,url,views,likes,comments,shares,saves,followers_gained,duration_seconds)"></textarea>
+    <button id="paste-load" class="btn primary">Analyze</button>
+  </div>
+
+  <p id="parse-note" class="parse-note"></p>
+
+  <div id="platform-tabs" class="platform-tabs"></div>
+
+  <!-- Empty state (shown when data can't auto-load, e.g. opened via file://) -->
+  <section id="empty-state" class="empty-state hidden">
+    <h2>Drop in your numbers</h2>
+    <p>Import a CSV export from TikTok, YouTube, or Instagram — or click <b>Sample data</b> to see how it works.
+       Serve the folder over http (<code>python3 -m http.server</code>) to auto-load the sample.</p>
+    <p class="hint">Expected columns: platform, account, published_at, title, url, views, likes, comments, shares, saves, followers_gained, duration_seconds. Unknown columns are ignored; missing ones default to zero.</p>
+  </section>
+
+  <main id="dashboard" class="dashboard hidden">
+    <section class="panel">
+      <h3 class="panel-title">Overview</h3>
+      <div id="kpis" class="kpi-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h3 class="panel-title">What the numbers say</h3>
+      <div id="insights" class="insights"></div>
+    </section>
+
+    <div id="trend-row" class="grid-2">
+      <section id="timeline-section" class="panel">
+        <h3 class="panel-title">Views over time <span class="sub">by week</span></h3>
+        <div id="timeline-chart" class="chart-holder"></div>
+      </section>
+      <section id="donut-section" class="panel">
+        <h3 class="panel-title">View share <span class="sub">by platform</span></h3>
+        <div class="donut-wrap">
+          <div id="donut-chart"></div>
+          <ul id="donut-legend" class="legend"></ul>
+        </div>
+      </section>
+    </div>
+
+    <section id="platform-section" class="panel">
+      <h3 class="panel-title">Platform breakdown</h3>
+      <div id="platform-table" class="table-holder"></div>
+    </section>
+
+    <div id="timing-row" class="grid-2">
+      <section class="panel">
+        <h3 class="panel-title">Best day to post <span class="sub">avg views</span></h3>
+        <div id="dow-chart" class="chart-holder"></div>
+      </section>
+      <section class="panel">
+        <h3 class="panel-title">Best hour to post <span class="sub">avg views · 24h</span></h3>
+        <div id="hour-chart" class="chart-holder"></div>
+      </section>
+    </div>
+
+    <section id="theme-section" class="panel hidden">
+      <h3 class="panel-title">Hook themes <span class="sub">avg views by angle</span></h3>
+      <div id="theme-chart" class="chart-holder"></div>
+    </section>
+
+    <section id="hashtag-section" class="panel hidden">
+      <h3 class="panel-title">Hashtag performance <span class="sub">avg views · tags used 3+ times</span></h3>
+      <div id="hashtag-chart" class="chart-holder"></div>
+    </section>
+
+    <section id="duration-section" class="panel hidden">
+      <h3 class="panel-title">Clip length vs. reach <span class="sub">avg views</span></h3>
+      <div id="duration-chart" class="chart-holder"></div>
+    </section>
+
+    <section id="breakout-section" class="panel hidden">
+      <h3 class="panel-title">Breakout posts <span class="sub">3×+ your platform median</span></h3>
+      <div id="breakouts" class="breakout-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h3 class="panel-title">Top 10 posts <span class="sub">by views</span></h3>
+      <ol id="top-posts" class="top-posts"></ol>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Signal runs entirely in your browser — your data never leaves this page.</p>
+  </footer>
+<script>
+
+const __EMBEDDED = {
+  "data/theillcollective.csv": `platform,account,title,caption,views
+TikTok,theillcollective,i don't think donald is going to like my new single...,was so close to deleting this track #singersongwriter #trump #epsteinfiles #iran,224000
+TikTok,theillcollective,i'm convinced tiktok is only showing my music to New Zealand. Where are you from?,let me know x #theillcollective #singersongwriter #indiemusician #nzmusic #newmusic,43000
+TikTok,theillcollective,hi if you have 20 seconds please take a listen to my music. You could be one of my first fans.,You can find the ill collective on spotify #theillcollective #indiemusician #newmusicalert #indiemusic #singersongwriter,42000
+TikTok,theillcollective,i'm convinced tiktok only shows my music to people in New Zealand. where are you from?,The party's over - The ill collective 💙💀#theillcollective #nzmusic #singersongwriter #indiemusician #indiemusic,34000
+TikTok,theillcollective,pov: when you write a song about Donald and tiktok tries to ban it,#trump #epstein #epsteinfiles #iran #bloodorange,29000
+TikTok,theillcollective,my name is the ill collective,Let me know what you think x#theillcollective #indiemusic #singersongwriter #upandcomingartist #newmusic,29000
+TikTok,theillcollective,but the people spoke ✌️,didn't expect so much love from this song #theillcollective #newmusic #epstien #trump,21000
+TikTok,theillcollective,someone should write a protest song about donald:,blood orange #trump #epstein #iran #whitehouse #us,20000
+TikTok,theillcollective,is this the 2026 anthem?,#tiktokartist #singersongwriter #indiemusic #newmusicalert #indiemusic,18000
+TikTok,theillcollective,"If you're supporting someone through a tough time, this song is for you",Still breathing by the ill collective #theillcollective #singersongwriter #upandcomingartist #newmusic #newmusicalert,13000
+TikTok,theillcollective,POV: Tiktok keeps pulling down your new single about TR-MP,can't stop won't stop #trump #epstein #epsteinfiles #iran #bloodorange,11000
+TikTok,theillcollective,I wrote this for anyone out there living in disbelief with the state of the world,this was a cooking for a while #trump #iran #epstien #israel #warcrimes,9830
+TikTok,theillcollective,pretty sure i've genuinely just found an artist before they blow up,pre save 'victim' link in bio #theillcollective #musicdaily #songwriting #upandcomingartist #newmusic,9788
+TikTok,theillcollective,POV: when you're so sick of this man you write him a song,though he'd love to hear what i've wrote for him #trump #iran #epstien #war #indiemusic,8927
+TikTok,theillcollective,hi you've just scrolled upon a very small New Zealand artist,#theillcollective #singersongwriter #upandcomingartist #nzmusic #nzartist,7493
+TikTok,theillcollective,"[reply-to-comment video, no fixed on-screen hook] Reply to @Finny: ""I'm a trump supporter, but this is actually lowkey fire!! Keep up the good work my""",Replying to @Finny Who's keen to help share this track? 🫶🍊#theillcollective #orangeman #trump #iran #epstien,6891
+TikTok,theillcollective,pov: your a small NZ artist and your single dropped today,finally out! link in bio to stream xx #newreleasefriday #newmusic #songwriting #nzmusic,5642
+TikTok,theillcollective,The song no one wants to write but we all want to hear,Reckon it's worth finishing? #trump #iran #epstien #ice #indiemusic,5547
+TikTok,theillcollective,my artist name is the ill collective,just shooting my shot. Hope some of my music resonates with you x #theillcollective #indiemusic #singersongwriter #upandcomingartist #newmusic,5505
+TikTok,theillcollective,turns out a few others were feeling the same way,hope you enjoying the tune x #theillcollective #orangeman #trump #iran #epsteinfiles,5355
+TikTok,theillcollective,i'm a nz artist i make indie soul music out of my bedroom,link in comments to album x #theillcollective #singersongwriter #upandcomingartist #newmusicalert #newmusic,5158
+TikTok,theillcollective,I wrote this album after surviving a year long depression then becoming a Dad,Hope you enjoy #theillcollective #indiemusic #singersongwriter,4965
+TikTok,theillcollective,I don't think this is a hit... but it's honest,all in my head - the ill collective #indiemusic #newmusicalert #upandcomingartist #newmusic #nzmusic,4566
+TikTok,theillcollective,"[AI lyric video, no fixed on-screen hook — karaoke-style lyrics only]",blood orange - the ill collective #tiktokartist #singersongwriter #trump #epsteinfiles #iran,4262
+TikTok,theillcollective,If you have 15 seconds take a listen x,#theillcollective #indiemusic #singersongwriter #newmusic #upandcomingartist,3683
+TikTok,theillcollective,"As a non-trending artist, the fact that I was able to land on your page is pretty cool. If you're one of the few watching, this undiscovered song can be OUR little secret","Hey if you wanna gatekeeping, you do you 💙🫶 #theillcollective #singersongwriter #indiemusician #indiemusic #upandcomingartist",3646
+TikTok,theillcollective,I lost one of my best mates to addiction. This is the song I wrote about him. Its out tomorrow.,Out on spotify and all streaming services soon #theillcollective #newmusic #nzmusic #newmusicalert #nzartist,3277
+TikTok,theillcollective,Hellloooo you have stumbled upon a small indie artist / I make indie soul music that sounds like this,#theillcollective #singersongwriter #upandcomingartist #newmusicalert #newmusicalert,3272
+TikTok,theillcollective,Don't think Donald is going to like this one 💀,dropping soon #trump #iran #epstien #ice #indiemusic,3115
+TikTok,theillcollective,POV: when your nextdoor neighbour HATES the song you just dropped,no anyone that's going to hate this? #theillcollective #epsteinfiles #trump #iran,2916
+TikTok,theillcollective,"""it's just a song...""",hopefully out next week #trump #iran #epstien #warcrimes #israel,2797
+TikTok,theillcollective,POV: you wrote an anti TR-MP song in a mcdonald's carpark and people ACTUALLY play it,#indieartist #nzmusic #newsong #indiemusic #newmusic,2658
+TikTok,theillcollective,If I was lucky enough to get your attention. My name is the ill collective. I make music from my bedroom in New Zealand.,Even if you stop for a couple seconds I appreciate your ears x #theillcollective #singersongwriter #upandcomingartist #newmusic #indiemusician,2337
+TikTok,theillcollective,pov: you're a New Zealand artist and your first single drops this saturday,Less than two days til 'The party's over drops. Check out the ill collective on spotify if you keen :) #singersongwriter #newmusicalert #nzmusic #newmusic #upandcomingartist,2266
+TikTok,theillcollective,pov: you're an undiscovered artist and your single drops on spotify next week,20 march 🫶 #indiemusic #newmusicalert #songwriter,1948
+TikTok,theillcollective,he's just another tiktok artist...,dropping soon #tiktokartist #singersongwriter #newmusic,1723
+TikTok,theillcollective,can we normalise listening to small artists? I'm tired of ppl skipping just becuase we're not trending yet..,if you are wondering this song is called the party's over by the ill collective #theillcollective #nzmusic #singersongwriter #indiemusic #indiemusician,1593
+TikTok,theillcollective,There was an orange man in a white house he had no soul and they found out so he set the world on fire / It's not good enough that we sit back We watch it all unfold and just let the world burn to the ground,he's gunna love it #tiktokartist #singersongwriter #trending #trump #iran,1571
+TikTok,theillcollective,There was an orange man in a white house he had no soul and they found out so he set the world on fire / It's not good enough that we sit back We watch it all unfold and just let the world burn to the ground,Blood orange - coming soon #trump #iran #epstien #israel #warcrimes,1519
+TikTok,theillcollective,My name is the ill collective. I wrote this song in my bedroom back in New Zealand -->,Blood orange live now. If you agree with the message please help share x #theillcollective #trump #epsteinfiles #iran #epstien,1496
+TikTok,theillcollective,"[reply-to-comment video] Reply to Farah Syed: ""There's only so many times I can hear this on repeat! Bruh! Release the full version! Pretty Please!""",Replying to @Farah Syed can't wait to get the full version out. appreciate the 💙 #singersongwriter #trump #epsteinfiles #iran #epstien,1479
+TikTok,theillcollective,hi i'm the ill collective and i make music like this,this song is called the party's over by the ill collective. it's now out on all platforms :) #singersongwriter #newmusic #indiemusician #theillcollective #indiemusic,1404
+TikTok,theillcollective,pov: your first ever single dropped today,the party's over by the ill collective :) #theillcollective #nzmusic #singersongwriter #indiemusician #indiemusician,1345
+TikTok,theillcollective,it's just a song...,#trump #epstein #epsteinfiles #iran #bloodorange,1314
+TikTok,theillcollective,[karaoke-style lyric video] he's...,Blood orange - the ill collective . Keep an ear out #trump #iran #epstien #warcrimes #indiemusic,1192
+TikTok,theillcollective,it's called blood orange -->,let me know what you think #trump #epstein #epsteinfiles #iran #bloodorange,1145
+TikTok,theillcollective,POV: waiting anxiously for Spotify to publish my song about an evil orange man,There's a good chance my account will get frozen #trump #epsteinfiles #epstien #warcrimes,1137
+TikTok,theillcollective,"[reply-to-comment video] Reply to Jasmine Robertson: ""I will listen to this on repeat. We need the full version. Listening in New Zealand.""",Replying to @Jasmine Robertson dropping next week 💙🍊🍊 #trump #epsteinfiles #epstien #iran,1137
+TikTok,theillcollective,Just a very small New Zealand songwriter dropping a new track,Can't wait to drop this. #IndieMusic #Theillcollective,1077
+TikTok,theillcollective,not sure if tiktok wants to show my music outside of new zealand. where are you from?,dropping june 12 - link in bio #indieartist #nzmusic #newsong #indiemusic #newmusic,1029
+TikTok,theillcollective,"if YOU are totally disgusted by Donald and what he's doing to the world, this is YOUR song",let me know where you are listening from #trump #epstein #epsteinfiles #iran #bloodorange,1029
+TikTok,theillcollective,i always get an embarrassing amount of views on tiktok. consider yourself very early to my music 🙇,"this one is called ""too late now"" - the ill collective. #indieartist #nzmusic #newsong #indiemusic #newmusic",1027
+TikTok,theillcollective,"POV: Tiktok, Youtube & Spotify keep trying to silence you're protest song",loving all the support flowing in 🫂 #trump #epstein #epsteinfiles #iran #israel,1027
+TikTok,theillcollective,these lyrics just fell out of the sky one evening,#singersongwriter #tiktokartist,1021
+TikTok,theillcollective,BUT you should x,link in bio if you want the whole song #trump #epstein #epsteinfiles #iran #bloodorange,1004
+`,
+  "data/sample.csv": `platform,account,published_at,title,url,views,likes,comments,shares,saves,followers_gained,duration_seconds
+Instagram,the.ill.collective,2026-02-20T17:30:00,"one mic, one take",https://instagram.com/@the.ill.collective/post/100057,12346,1286,90,188,196,78,34
+TikTok,theillcollective,2026-02-21T17:15:00,chasing that one feeling,https://tiktok.com/@theillcollective/post/100084,25483,1807,135,245,195,122,18
+TikTok,theillcollective,2026-02-21T17:15:00,"one mic, one take",https://tiktok.com/@theillcollective/post/100133,8308,742,60,75,118,23,12
+Instagram,the.ill.collective,2026-02-24T22:15:00,recording in a stairwell for the reverb,https://instagram.com/@the.ill.collective/post/100155,9854,580,25,56,152,37,58
+YouTube,The ill collective,2026-02-26T08:00:00,this melody wouldn't leave my head,https://youtube.com/@theillcollective/post/100159,7274,581,39,119,0,44,58
+YouTube,The ill collective fans,2026-02-26T20:30:00,turning my worst take into a hook,https://youtube.com/@theillcollectivefans/post/100069,18158,700,78,77,0,72,15
+TikTok,theillcollective,2026-02-26T20:45:00,sampling a cassette I found,https://tiktok.com/@theillcollective/post/100109,11186,749,69,69,160,66,45
+YouTube,The ill collective fans,2026-02-27T12:30:00,the sound everyone slept on,https://youtube.com/@theillcollectivefans/post/100081,18429,705,62,45,0,114,8
+TikTok,theillcollective,2026-03-03T07:15:00,when the harmony finally clicked,https://tiktok.com/@theillcollective/post/100021,17194,2395,164,124,231,123,15
+TikTok,theillcollective,2026-03-03T20:00:00,the demo vs the master,https://tiktok.com/@theillcollective/post/100104,4295,454,32,26,100,13,8
+TikTok,theillcollective,2026-03-03T20:30:00,found my old lyric notebook,https://tiktok.com/@theillcollective/post/100003,43575,6346,449,1375,734,157,22
+TikTok,theillcollective,2026-03-04T19:00:00,behind the last single,https://tiktok.com/@theillcollective/post/100031,8672,1300,108,312,358,46,58
+TikTok,theillcollective,2026-03-05T17:45:00,this melody wouldn't leave my head,https://tiktok.com/@theillcollective/post/100047,1172,128,11,10,33,8,12
+TikTok,theillcollective,2026-03-06T19:00:00,found my old lyric notebook,https://tiktok.com/@theillcollective/post/100016,156986,19042,841,4611,1858,386,12
+Instagram,the.ill.collective,2026-03-08T08:45:00,chasing that one feeling,https://instagram.com/@the.ill.collective/post/100101,37284,1805,123,312,239,150,12
+YouTube,The ill collective fans,2026-03-08T18:45:00,flipping a jazz chord into a trap beat,https://youtube.com/@theillcollectivefans/post/100092,1662,153,16,17,0,8,15
+YouTube,The ill collective,2026-03-08T18:45:00,flipping a jazz chord into a trap beat,https://youtube.com/@theillcollective/post/100112,5573,442,51,78,0,23,58
+YouTube,The ill collective,2026-03-09T22:45:00,"one mic, one take",https://youtube.com/@theillcollective/post/100138,310,30,3,5,0,1,34
+YouTube,The ill collective fans,2026-03-10T18:00:00,wrote this at 3am,https://youtube.com/@theillcollectivefans/post/100085,3797,126,8,16,0,21,22
+TikTok,theillcollective,2026-03-10T18:45:00,when the harmony finally clicked,https://tiktok.com/@theillcollective/post/100120,25275,4488,182,1099,747,166,27
+Instagram,the.ill.collective,2026-03-10T19:30:00,wrote this at 3am,https://instagram.com/@the.ill.collective/post/100012,7726,407,33,58,102,51,18
+TikTok,theillcollective,2026-03-11T19:00:00,sampling a cassette I found,https://tiktok.com/@theillcollective/post/100087,11762,1572,182,281,176,22,22
+TikTok,theillcollective,2026-03-12T07:15:00,the demo vs the master,https://tiktok.com/@theillcollective/post/100100,30522,4165,166,448,609,46,34
+TikTok,theillcollective,2026-03-15T20:45:00,tried to make you cry in 15 seconds,https://tiktok.com/@theillcollective/post/100179,17066,2828,186,688,739,77,27
+YouTube,The ill collective fans,2026-03-17T20:00:00,"one mic, one take",https://youtube.com/@theillcollectivefans/post/100077,15586,1499,73,210,0,42,27
+TikTok,theillcollective,2026-03-18T20:15:00,sampling a cassette I found,https://tiktok.com/@theillcollective/post/100175,3874,371,38,51,110,25,18
+Instagram,the.ill.collective,2026-03-22T22:15:00,the lyric that got cut,https://instagram.com/@the.ill.collective/post/100017,20102,1894,110,193,430,67,22
+TikTok,theillcollective,2026-03-24T20:00:00,made a beat from a voicemail,https://tiktok.com/@theillcollective/post/100114,10528,1490,133,289,317,72,8
+YouTube,The ill collective,2026-03-25T07:15:00,chasing that one feeling,https://youtube.com/@theillcollective/post/100074,32457,1248,50,78,0,137,27
+TikTok,theillcollective,2026-03-25T19:00:00,the sound everyone slept on,https://tiktok.com/@theillcollective/post/100093,4150,658,59,141,159,24,58
+TikTok,theillcollective,2026-03-25T19:00:00,the sound everyone slept on,https://tiktok.com/@theillcollective/post/100113,30243,2229,254,211,642,143,22
+YouTube,The ill collective fans,2026-03-26T07:30:00,"one mic, one take",https://youtube.com/@theillcollectivefans/post/100103,14080,1251,115,220,0,94,12
+YouTube,The ill collective,2026-03-26T22:45:00,found my old lyric notebook,https://youtube.com/@theillcollective/post/100177,18309,1539,166,153,0,110,18
+Instagram,the.ill.collective,2026-03-27T08:15:00,made a beat from a voicemail,https://instagram.com/@the.ill.collective/post/100128,1274,108,3,14,25,2,15
+TikTok,theillcollective,2026-04-01T18:00:00,chasing that one feeling,https://tiktok.com/@theillcollective/post/100055,12770,2448,175,179,643,58,22
+Instagram,the.ill.collective,2026-04-01T20:45:00,this melody wouldn't leave my head,https://instagram.com/@the.ill.collective/post/100032,3521,351,35,51,46,14,22
+YouTube,The ill collective fans,2026-04-03T17:45:00,found my old lyric notebook,https://youtube.com/@theillcollectivefans/post/100067,20473,2200,158,143,0,129,18
+TikTok,theillcollective,2026-04-04T21:45:00,recording in a stairwell for the reverb,https://tiktok.com/@theillcollective/post/100086,30293,1952,101,327,381,117,22
+Instagram,the.ill.collective,2026-04-05T19:45:00,layering 40 vocals,https://instagram.com/@the.ill.collective/post/100052,14930,1341,99,91,209,51,12
+YouTube,The ill collective,2026-04-09T07:30:00,first take vs final mix,https://youtube.com/@theillcollective/post/100124,3497,159,13,22,0,24,8
+Instagram,the.ill.collective,2026-04-09T20:45:00,turning my worst take into a hook,https://instagram.com/@the.ill.collective/post/100118,17845,1991,75,256,359,50,27
+TikTok,theillcollective,2026-04-10T17:45:00,made a beat from a voicemail,https://tiktok.com/@theillcollective/post/100045,3413,491,58,106,71,12,22
+Instagram,the.ill.collective,2026-04-11T19:45:00,making noise sound pretty,https://instagram.com/@the.ill.collective/post/100121,4309,186,13,26,39,20,27
+TikTok,theillcollective,2026-04-15T21:00:00,first take vs final mix,https://tiktok.com/@theillcollective/post/100015,8735,1532,85,290,368,57,45
+TikTok,theillcollective,2026-04-18T21:30:00,made a beat from a voicemail,https://tiktok.com/@theillcollective/post/100080,31344,4485,460,982,1320,212,58
+Instagram,the.ill.collective,2026-04-20T19:30:00,the demo vs the master,https://instagram.com/@the.ill.collective/post/100063,3663,410,22,65,39,27,22
+YouTube,The ill collective fans,2026-04-20T21:30:00,tried to make you cry in 15 seconds,https://youtube.com/@theillcollectivefans/post/100142,6783,572,62,141,0,32,34
+TikTok,theillcollective,2026-04-21T20:30:00,turning my worst take into a hook,https://tiktok.com/@theillcollective/post/100061,44750,3821,332,857,678,264,8
+Instagram,the.ill.collective,2026-04-22T17:00:00,first take vs final mix,https://instagram.com/@the.ill.collective/post/100141,6062,640,33,37,113,29,8
+YouTube,The ill collective fans,2026-04-22T17:15:00,when the harmony finally clicked,https://youtube.com/@theillcollectivefans/post/100164,10681,444,32,57,0,49,34
+Instagram,the.ill.collective,2026-04-22T20:45:00,tried to make you cry in 15 seconds,https://instagram.com/@the.ill.collective/post/100043,5294,432,30,23,62,20,18
+YouTube,The ill collective fans,2026-04-26T20:45:00,layering 40 vocals,https://youtube.com/@theillcollectivefans/post/100149,20433,1221,123,102,0,124,45
+TikTok,theillcollective,2026-04-27T17:15:00,the sound everyone slept on,https://tiktok.com/@theillcollective/post/100166,8272,1199,89,142,102,15,34
+TikTok,theillcollective,2026-04-28T20:15:00,"one mic, one take",https://tiktok.com/@theillcollective/post/100050,7532,1081,112,69,125,24,22
+TikTok,theillcollective,2026-04-28T20:45:00,making noise sound pretty,https://tiktok.com/@theillcollective/post/100170,11631,1442,119,172,383,62,22
+TikTok,theillcollective,2026-04-30T19:15:00,this melody wouldn't leave my head,https://tiktok.com/@theillcollective/post/100098,30216,5288,579,1248,905,117,27
+YouTube,The ill collective,2026-05-01T07:00:00,the bridge nobody asked for,https://youtube.com/@theillcollective/post/100046,6203,277,20,62,0,31,45
+TikTok,theillcollective,2026-05-01T12:00:00,a love song for a city,https://tiktok.com/@theillcollective/post/100072,40192,2090,182,510,190,139,15
+YouTube,The ill collective,2026-05-01T17:15:00,making noise sound pretty,https://youtube.com/@theillcollective/post/100000,11371,959,65,53,0,30,58
+TikTok,theillcollective,2026-05-02T19:00:00,layering 40 vocals,https://tiktok.com/@theillcollective/post/100014,8175,781,93,169,228,61,18
+YouTube,The ill collective,2026-05-02T19:15:00,POV: the drop hits,https://youtube.com/@theillcollective/post/100126,19304,1850,170,273,0,86,58
+Instagram,the.ill.collective,2026-05-03T18:30:00,flipping a jazz chord into a trap beat,https://instagram.com/@the.ill.collective/post/100147,1815,200,20,38,49,6,18
+YouTube,The ill collective fans,2026-05-03T19:45:00,layering 40 vocals,https://youtube.com/@theillcollectivefans/post/100131,17061,1078,110,125,0,105,22
+TikTok,theillcollective,2026-05-04T20:45:00,found my old lyric notebook,https://tiktok.com/@theillcollective/post/100053,28872,2753,162,671,465,135,8
+TikTok,theillcollective,2026-05-06T18:45:00,the bridge nobody asked for,https://tiktok.com/@theillcollective/post/100062,1437,183,8,12,49,7,18
+TikTok,theillcollective,2026-05-06T19:15:00,the bridge nobody asked for,https://tiktok.com/@theillcollective/post/100132,1761,305,23,20,69,4,15
+YouTube,The ill collective,2026-05-07T21:15:00,recording in a stairwell for the reverb,https://youtube.com/@theillcollective/post/100144,13793,1177,94,90,0,39,18
+YouTube,The ill collective fans,2026-05-08T22:00:00,the lyric that got cut,https://youtube.com/@theillcollectivefans/post/100146,1013,95,9,22,0,6,18
+TikTok,theillcollective,2026-05-10T20:00:00,chasing that one feeling,https://tiktok.com/@theillcollective/post/100066,14112,755,73,64,82,68,27
+YouTube,The ill collective,2026-05-11T12:30:00,the demo vs the master,https://youtube.com/@theillcollective/post/100171,493,19,1,3,0,2,45
+TikTok,theillcollective,2026-05-11T18:30:00,when the harmony finally clicked,https://tiktok.com/@theillcollective/post/100078,5887,792,83,54,80,36,15
+YouTube,The ill collective fans,2026-05-11T19:00:00,flipping a jazz chord into a trap beat,https://youtube.com/@theillcollectivefans/post/100026,2960,157,4,36,0,14,18
+YouTube,The ill collective,2026-05-12T17:00:00,recording in a stairwell for the reverb,https://youtube.com/@theillcollective/post/100117,1492,51,3,8,0,4,15
+YouTube,The ill collective fans,2026-05-17T07:30:00,chasing that one feeling,https://youtube.com/@theillcollectivefans/post/100042,810,69,7,13,0,2,8
+YouTube,The ill collective fans,2026-05-17T20:45:00,when the harmony finally clicked,https://youtube.com/@theillcollectivefans/post/100060,8706,938,60,106,0,52,45
+YouTube,The ill collective,2026-05-20T17:00:00,the bridge nobody asked for,https://youtube.com/@theillcollective/post/100037,12905,1317,63,71,0,28,15
+TikTok,theillcollective,2026-05-20T18:45:00,made a beat from a voicemail,https://tiktok.com/@theillcollective/post/100167,26696,2040,193,286,193,40,12
+Instagram,the.ill.collective,2026-05-20T20:45:00,wrote this at 3am,https://instagram.com/@the.ill.collective/post/100025,7979,420,45,42,87,62,8
+TikTok,theillcollective,2026-05-21T18:45:00,"one mic, one take",https://tiktok.com/@theillcollective/post/100013,227214,24053,2298,5053,2502,568,58
+TikTok,theillcollective,2026-05-22T21:30:00,a love song for a city,https://tiktok.com/@theillcollective/post/100002,28386,3707,237,594,972,153,27
+YouTube,The ill collective,2026-05-23T19:00:00,first take vs final mix,https://youtube.com/@theillcollective/post/100111,21296,1021,63,167,0,93,58
+YouTube,The ill collective fans,2026-05-25T08:15:00,sampling a cassette I found,https://youtube.com/@theillcollectivefans/post/100145,331,21,0,4,0,1,58
+TikTok,theillcollective,2026-05-25T19:45:00,behind the last single,https://tiktok.com/@theillcollective/post/100105,23814,2605,194,389,738,112,12
+TikTok,theillcollective,2026-05-26T17:30:00,the bridge nobody asked for,https://tiktok.com/@theillcollective/post/100099,38551,5346,226,574,1403,228,15
+Instagram,the.ill.collective,2026-05-27T08:15:00,tried to make you cry in 15 seconds,https://instagram.com/@the.ill.collective/post/100139,7364,371,28,72,47,9,8
+YouTube,The ill collective,2026-05-27T18:30:00,found my old lyric notebook,https://youtube.com/@theillcollective/post/100082,671,42,3,9,0,1,8
+TikTok,theillcollective,2026-05-28T21:45:00,POV: the drop hits,https://tiktok.com/@theillcollective/post/100024,2419,231,23,22,19,6,27
+TikTok,theillcollective,2026-05-29T18:45:00,wrote this at 3am,https://tiktok.com/@theillcollective/post/100007,11695,1465,138,272,290,35,27
+YouTube,The ill collective,2026-05-30T18:00:00,when the harmony finally clicked,https://youtube.com/@theillcollective/post/100158,412,28,1,1,0,1,58
+TikTok,theillcollective,2026-06-01T21:15:00,POV: the drop hits,https://tiktok.com/@theillcollective/post/100127,3711,468,32,47,86,9,58
+YouTube,The ill collective fans,2026-06-01T22:15:00,a love song for a city,https://youtube.com/@theillcollectivefans/post/100039,374,25,2,5,0,1,12
+Instagram,the.ill.collective,2026-06-02T17:15:00,this melody wouldn't leave my head,https://instagram.com/@the.ill.collective/post/100005,14829,1298,97,294,287,32,15
+Instagram,the.ill.collective,2026-06-04T20:45:00,turning my worst take into a hook,https://instagram.com/@the.ill.collective/post/100129,3940,440,38,101,43,20,58
+YouTube,The ill collective fans,2026-06-04T20:45:00,when the harmony finally clicked,https://youtube.com/@theillcollectivefans/post/100173,10519,459,46,43,0,14,18
+Instagram,the.ill.collective,2026-06-05T08:30:00,wrote this at 3am,https://instagram.com/@the.ill.collective/post/100054,6670,410,22,31,58,47,45
+Instagram,the.ill.collective,2026-06-06T21:15:00,a love song for a city,https://instagram.com/@the.ill.collective/post/100130,124715,11496,1119,2580,1651,181,22
+YouTube,The ill collective,2026-06-12T18:45:00,flipping a jazz chord into a trap beat,https://youtube.com/@theillcollective/post/100116,957,55,5,12,0,7,15
+TikTok,theillcollective,2026-06-12T21:30:00,POV: the drop hits,https://tiktok.com/@theillcollective/post/100019,15788,1646,170,180,371,119,15
+TikTok,theillcollective,2026-06-12T21:45:00,the sound everyone slept on,https://tiktok.com/@theillcollective/post/100011,1224,110,5,10,10,6,18
+YouTube,The ill collective fans,2026-06-13T08:00:00,tried to make you cry in 15 seconds,https://youtube.com/@theillcollectivefans/post/100076,2095,86,7,16,0,7,58
+TikTok,theillcollective,2026-06-13T20:30:00,making noise sound pretty,https://tiktok.com/@theillcollective/post/100089,14718,809,27,100,115,82,12
+TikTok,theillcollective,2026-06-13T20:45:00,"one mic, one take",https://tiktok.com/@theillcollective/post/100096,2610,471,52,41,107,13,45
+TikTok,theillcollective,2026-06-15T12:45:00,layering 40 vocals,https://tiktok.com/@theillcollective/post/100110,44734,8614,776,1653,1731,142,22
+TikTok,theillcollective,2026-06-15T19:45:00,recording in a stairwell for the reverb,https://tiktok.com/@theillcollective/post/100169,800,69,7,11,17,3,27
+TikTok,theillcollective,2026-06-16T07:30:00,layering 40 vocals,https://tiktok.com/@theillcollective/post/100008,42312,3951,340,862,757,108,27
+Instagram,the.ill.collective,2026-06-16T18:15:00,this melody wouldn't leave my head,https://instagram.com/@the.ill.collective/post/100030,8952,543,49,124,146,64,34
+Instagram,the.ill.collective,2026-06-16T21:15:00,POV: the drop hits,https://instagram.com/@the.ill.collective/post/100064,17975,747,46,81,174,24,34
+TikTok,theillcollective,2026-06-17T18:00:00,this melody wouldn't leave my head,https://tiktok.com/@theillcollective/post/100018,801,79,6,11,8,2,12
+YouTube,The ill collective,2026-06-18T12:30:00,the sound everyone slept on,https://youtube.com/@theillcollective/post/100036,2868,172,11,34,0,19,22
+YouTube,The ill collective fans,2026-06-18T19:00:00,recording in a stairwell for the reverb,https://youtube.com/@theillcollectivefans/post/100090,4040,303,22,24,0,6,12
+YouTube,The ill collective,2026-06-19T20:30:00,tried to make you cry in 15 seconds,https://youtube.com/@theillcollective/post/100038,727,55,5,13,0,1,8
+YouTube,The ill collective fans,2026-06-21T19:30:00,recording in a stairwell for the reverb,https://youtube.com/@theillcollectivefans/post/100044,3611,214,11,21,0,7,18
+TikTok,theillcollective,2026-06-22T18:45:00,flipping a jazz chord into a trap beat,https://tiktok.com/@theillcollective/post/100162,42015,5495,449,541,894,283,34
+YouTube,The ill collective fans,2026-06-23T22:15:00,recording in a stairwell for the reverb,https://youtube.com/@theillcollectivefans/post/100056,4171,192,18,14,0,6,34
+TikTok,theillcollective,2026-06-24T07:30:00,the sound everyone slept on,https://tiktok.com/@theillcollective/post/100035,19046,2875,324,707,567,140,8
+TikTok,theillcollective,2026-06-25T17:45:00,the lyric that got cut,https://tiktok.com/@theillcollective/post/100157,7768,842,72,176,199,13,15
+Instagram,the.ill.collective,2026-06-26T12:15:00,behind the last single,https://instagram.com/@the.ill.collective/post/100070,13950,1095,106,261,188,87,15
+YouTube,The ill collective fans,2026-06-28T17:00:00,behind the last single,https://youtube.com/@theillcollectivefans/post/100075,11068,830,72,46,0,88,34
+Instagram,the.ill.collective,2026-06-28T19:15:00,wrote this at 3am,https://instagram.com/@the.ill.collective/post/100097,11715,493,43,110,99,22,58
+Instagram,the.ill.collective,2026-06-28T22:30:00,the sound everyone slept on,https://instagram.com/@the.ill.collective/post/100059,13372,984,69,191,167,75,15
+Instagram,the.ill.collective,2026-06-29T20:00:00,found my old lyric notebook,https://instagram.com/@the.ill.collective/post/100091,1312,96,4,11,13,5,27
+YouTube,The ill collective fans,2026-06-30T18:30:00,wrote this at 3am,https://youtube.com/@theillcollectivefans/post/100094,1936,118,5,29,0,4,22
+Instagram,the.ill.collective,2026-07-04T07:00:00,"one mic, one take",https://instagram.com/@the.ill.collective/post/100150,15958,1570,166,151,369,20,58
+TikTok,theillcollective,2026-07-04T12:15:00,tried to make you cry in 15 seconds,https://tiktok.com/@theillcollective/post/100152,16229,1609,59,389,291,46,18
+Instagram,the.ill.collective,2026-07-04T19:00:00,a love song for a city,https://instagram.com/@the.ill.collective/post/100102,2710,285,15,15,72,9,12
+Instagram,the.ill.collective,2026-07-05T21:15:00,layering 40 vocals,https://instagram.com/@the.ill.collective/post/100154,1073,119,4,7,33,7,8
+YouTube,The ill collective fans,2026-07-06T18:15:00,making noise sound pretty,https://youtube.com/@theillcollectivefans/post/100140,1305,76,7,5,0,8,34
+Instagram,the.ill.collective,2026-07-06T18:30:00,first take vs final mix,https://instagram.com/@the.ill.collective/post/100040,548,18,1,2,2,3,45
+YouTube,The ill collective,2026-07-06T20:15:00,this melody wouldn't leave my head,https://youtube.com/@theillcollective/post/100004,4273,461,22,52,0,27,8
+YouTube,The ill collective,2026-07-06T20:15:00,tried to make you cry in 15 seconds,https://youtube.com/@theillcollective/post/100010,8991,386,32,93,0,67,18
+YouTube,The ill collective fans,2026-07-07T21:15:00,turning my worst take into a hook,https://youtube.com/@theillcollectivefans/post/100135,12228,1021,78,158,0,44,12
+TikTok,theillcollective,2026-07-08T08:15:00,the lyric that got cut,https://tiktok.com/@theillcollective/post/100033,2563,287,19,45,49,6,34
+TikTok,theillcollective,2026-07-09T18:00:00,making noise sound pretty,https://tiktok.com/@theillcollective/post/100106,971,84,5,15,13,1,27
+TikTok,theillcollective,2026-07-11T12:30:00,the demo vs the master,https://tiktok.com/@theillcollective/post/100020,15422,1154,62,170,322,107,12
+YouTube,The ill collective,2026-07-12T12:30:00,when the harmony finally clicked,https://youtube.com/@theillcollective/post/100172,588,32,1,1,0,1,34
+YouTube,The ill collective fans,2026-07-12T18:45:00,wrote this at 3am,https://youtube.com/@theillcollectivefans/post/100068,301,20,1,3,0,2,27
+YouTube,The ill collective fans,2026-07-14T08:45:00,flipping a jazz chord into a trap beat,https://youtube.com/@theillcollectivefans/post/100137,9373,269,8,25,0,15,34
+TikTok,theillcollective,2026-07-14T20:45:00,when the harmony finally clicked,https://tiktok.com/@theillcollective/post/100174,12650,841,87,103,219,18,45
+TikTok,theillcollective,2026-07-14T21:15:00,the bridge nobody asked for,https://tiktok.com/@theillcollective/post/100148,805,102,5,9,13,4,18
+Instagram,the.ill.collective,2026-07-16T19:15:00,first take vs final mix,https://instagram.com/@the.ill.collective/post/100136,2007,79,6,5,15,13,45
+Instagram,the.ill.collective,2026-07-17T18:00:00,the bridge nobody asked for,https://instagram.com/@the.ill.collective/post/100034,15870,1236,130,194,298,105,18
+TikTok,theillcollective,2026-07-17T20:45:00,the bridge nobody asked for,https://tiktok.com/@theillcollective/post/100178,5913,927,61,185,215,42,45
+YouTube,The ill collective fans,2026-07-19T18:45:00,found my old lyric notebook,https://youtube.com/@theillcollectivefans/post/100006,2620,105,10,23,0,5,15
+TikTok,theillcollective,2026-07-19T19:45:00,flipping a jazz chord into a trap beat,https://tiktok.com/@theillcollective/post/100022,1275,219,23,50,27,3,12
+TikTok,theillcollective,2026-07-20T17:15:00,wrote this at 3am,https://tiktok.com/@theillcollective/post/100073,4619,594,63,46,64,13,15
+TikTok,theillcollective,2026-07-21T22:15:00,found my old lyric notebook,https://tiktok.com/@theillcollective/post/100163,19825,3179,298,437,458,117,34
+YouTube,The ill collective,2026-07-22T19:15:00,turning my worst take into a hook,https://youtube.com/@theillcollective/post/100123,10879,488,41,106,0,23,18
+Instagram,the.ill.collective,2026-07-22T20:45:00,tried to make you cry in 15 seconds,https://instagram.com/@the.ill.collective/post/100161,628,69,5,14,10,2,15
+TikTok,theillcollective,2026-07-22T21:45:00,sampling a cassette I found,https://tiktok.com/@theillcollective/post/100119,13154,760,47,99,68,20,58
+YouTube,The ill collective,2026-07-23T18:00:00,the sound everyone slept on,https://youtube.com/@theillcollective/post/100009,475,55,2,5,0,2,12
+TikTok,theillcollective,2026-07-25T19:15:00,sampling a cassette I found,https://tiktok.com/@theillcollective/post/100048,26077,3805,315,516,780,41,12
+TikTok,theillcollective,2026-07-25T20:30:00,the demo vs the master,https://tiktok.com/@theillcollective/post/100065,26081,3388,159,339,834,167,15
+Instagram,the.ill.collective,2026-07-26T20:15:00,tried to make you cry in 15 seconds,https://instagram.com/@the.ill.collective/post/100176,6530,766,62,119,161,15,22
+YouTube,The ill collective fans,2026-07-27T18:30:00,the demo vs the master,https://youtube.com/@theillcollectivefans/post/100071,311,23,2,1,0,1,58
+YouTube,The ill collective,2026-07-27T19:45:00,chasing that one feeling,https://youtube.com/@theillcollective/post/100028,28687,1858,165,265,0,120,18
+TikTok,theillcollective,2026-07-27T20:30:00,behind the last single,https://tiktok.com/@theillcollective/post/100122,14838,1607,129,232,134,51,12
+TikTok,theillcollective,2026-07-27T21:45:00,a love song for a city,https://tiktok.com/@theillcollective/post/100041,8995,1001,52,237,141,38,45
+Instagram,the.ill.collective,2026-07-28T20:15:00,POV: the drop hits,https://instagram.com/@the.ill.collective/post/100023,13206,1583,51,312,242,99,18
+TikTok,theillcollective,2026-07-29T18:00:00,found my old lyric notebook,https://tiktok.com/@theillcollective/post/100027,22240,1815,120,198,196,90,34
+TikTok,theillcollective,2026-07-30T20:45:00,when the harmony finally clicked,https://tiktok.com/@theillcollective/post/100143,852,101,7,19,17,2,15
+Instagram,the.ill.collective,2026-08-02T22:00:00,turning my worst take into a hook,https://instagram.com/@the.ill.collective/post/100107,558,40,3,9,4,2,45
+TikTok,theillcollective,2026-08-04T18:45:00,the demo vs the master,https://tiktok.com/@theillcollective/post/100108,157742,15272,1068,998,1684,582,27
+TikTok,theillcollective,2026-08-05T17:45:00,the sound everyone slept on,https://tiktok.com/@theillcollective/post/100115,134485,15967,913,1580,4113,532,45
+TikTok,theillcollective,2026-08-05T20:45:00,wrote this at 3am,https://tiktok.com/@theillcollective/post/100001,2387,286,29,54,44,5,27
+TikTok,theillcollective,2026-08-06T08:45:00,first take vs final mix,https://tiktok.com/@theillcollective/post/100088,8959,1116,122,199,331,30,27
+YouTube,The ill collective,2026-08-06T22:00:00,the demo vs the master,https://youtube.com/@theillcollective/post/100153,418,25,0,2,0,1,34
+YouTube,The ill collective,2026-08-07T08:30:00,making noise sound pretty,https://youtube.com/@theillcollective/post/100029,417,18,1,1,0,0,45
+TikTok,theillcollective,2026-08-07T19:00:00,layering 40 vocals,https://tiktok.com/@theillcollective/post/100151,11835,622,48,66,118,70,34
+YouTube,The ill collective fans,2026-08-08T08:15:00,"one mic, one take",https://youtube.com/@theillcollectivefans/post/100049,762,22,1,2,0,2,22
+YouTube,The ill collective,2026-08-08T18:15:00,behind the last single,https://youtube.com/@theillcollective/post/100095,7282,340,29,78,0,44,8
+TikTok,theillcollective,2026-08-08T18:45:00,turning my worst take into a hook,https://tiktok.com/@theillcollective/post/100083,7156,737,29,136,155,34,22
+YouTube,The ill collective fans,2026-08-08T19:45:00,making noise sound pretty,https://youtube.com/@theillcollectivefans/post/100125,1994,188,11,38,0,12,22
+TikTok,theillcollective,2026-08-10T12:30:00,sampling a cassette I found,https://tiktok.com/@theillcollective/post/100079,33633,3785,131,406,562,64,58
+Instagram,the.ill.collective,2026-08-12T21:15:00,the lyric that got cut,https://instagram.com/@the.ill.collective/post/100168,4581,282,20,59,61,11,34
+YouTube,The ill collective,2026-08-14T18:15:00,POV: the drop hits,https://youtube.com/@theillcollective/post/100160,1506,54,2,5,0,9,27
+TikTok,theillcollective,2026-08-14T19:30:00,behind the last single,https://tiktok.com/@theillcollective/post/100134,20356,3125,155,754,578,87,27
+TikTok,theillcollective,2026-08-15T20:30:00,the demo vs the master,https://tiktok.com/@theillcollective/post/100156,871,122,12,29,20,5,8
+Instagram,the.ill.collective,2026-08-17T17:45:00,the bridge nobody asked for,https://instagram.com/@the.ill.collective/post/100058,1213,49,4,10,8,6,15
+TikTok,theillcollective,2026-08-18T18:30:00,found my old lyric notebook,https://tiktok.com/@theillcollective/post/100051,10439,494,34,56,66,19,8
+TikTok,theillcollective,2026-08-18T21:00:00,behind the last single,https://tiktok.com/@theillcollective/post/100165,1139,128,10,20,28,6,27
+`,
+};
+const __origFetch = window.fetch ? window.fetch.bind(window) : null;
+window.fetch = (u, ...rest) => {
+  const key = String(u);
+  const hit = Object.keys(__EMBEDDED).find(k => key.endsWith(k));
+  if (hit) return Promise.resolve(new Response(__EMBEDDED[hit], { status: 200, headers: { "Content-Type": "text/csv" } }));
+  return __origFetch ? __origFetch(u, ...rest) : Promise.reject(new Error("offline"));
+};
+
+// parse.js — CSV parsing and post-record normalization.
+// Accepts flexible column names so exports from different tools can be dropped in.
+
+const COLUMN_ALIASES = {
+  platform:   ["platform", "network", "channel type", "source"],
+  account:    ["account", "handle", "username", "channel", "profile", "page"],
+  publishedAt:["published_at", "date", "posted", "publish date", "post date", "time", "created", "datetime", "published"],
+  title:      ["title", "hook", "on-screen hook", "post", "name"],
+  caption:    ["caption", "description", "text", "body"],
+  url:        ["url", "link", "permalink", "post url"],
+  views:      ["views", "impressions", "plays", "reach", "video views"],
+  likes:      ["likes", "reactions", "favorites", "hearts"],
+  comments:   ["comments", "replies"],
+  shares:     ["shares", "reshares", "retweets", "sends"],
+  saves:      ["saves", "bookmarks", "saved"],
+  followersGained: ["followers_gained", "followers gained", "new followers", "follows"],
+  durationSeconds: ["duration_seconds", "duration", "length", "seconds", "video length"],
+};
+
+// Minimal RFC-4180-ish CSV parser (handles quotes, commas, newlines inside quotes).
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || (r.length === 1 && r[0].trim() !== ""));
+}
+
+function buildHeaderMap(headerRow) {
+  const normalized = headerRow.map(h => h.trim().toLowerCase());
+  const map = {};
+  for (const [key, aliases] of Object.entries(COLUMN_ALIASES)) {
+    const idx = normalized.findIndex(h => aliases.includes(h));
+    if (idx !== -1) map[key] = idx;
+  }
+  return map;
+}
+
+function num(v) {
+  if (v == null) return 0;
+  const cleaned = String(v).replace(/[, ]/g, "").replace(/[^0-9.\-]/g, "");
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function guessPlatformFromUrl(url) {
+  if (!url) return "Unknown";
+  const u = url.toLowerCase();
+  if (u.includes("tiktok")) return "TikTok";
+  if (u.includes("youtu")) return "YouTube";
+  if (u.includes("instagram")) return "Instagram";
+  if (u.includes("twitter") || u.includes("x.com")) return "X";
+  if (u.includes("facebook")) return "Facebook";
+  return "Unknown";
+}
+
+function normalizePlatform(name, url) {
+  const raw = (name || "").trim().toLowerCase();
+  const table = {
+    tiktok: "TikTok", tt: "TikTok",
+    youtube: "YouTube", yt: "YouTube", "youtube shorts": "YouTube",
+    instagram: "Instagram", ig: "Instagram", insta: "Instagram", reels: "Instagram",
+    twitter: "X", x: "X",
+    facebook: "Facebook", fb: "Facebook",
+  };
+  if (table[raw]) return table[raw];
+  if (raw) return name.trim();
+  return guessPlatformFromUrl(url);
+}
+
+// Turn raw CSV text into an array of normalized post records.
+// Returns { posts, errors, matched } for surfacing parse feedback.
+function parsePosts(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) return { posts: [], errors: ["File has no data rows."], matched: {} };
+
+  const headerMap = buildHeaderMap(rows[0]);
+  if (headerMap.views === undefined && headerMap.likes === undefined) {
+    return {
+      posts: [],
+      errors: ["Could not find a 'views' or 'likes' column. Check the header row."],
+      matched: headerMap,
+    };
+  }
+
+  const posts = [];
+  const errors = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const get = (k) => (headerMap[k] !== undefined ? r[headerMap[k]] : undefined);
+    const rawDate = get("publishedAt");
+    const date = rawDate ? new Date(rawDate) : null;
+    if (rawDate && isNaN(date.getTime())) {
+      errors.push(`Row ${i + 1}: unrecognized date "${rawDate}"`);
+    }
+    const url = (get("url") || "").trim();
+    const caption = (get("caption") || "").trim();
+    let title = (get("title") || "").trim();
+    if (!title) title = caption ? caption : "(untitled)";
+    posts.push({
+      platform: normalizePlatform(get("platform"), url),
+      account: (get("account") || "—").trim(),
+      publishedAt: date && !isNaN(date.getTime()) ? date : null,
+      title,
+      caption,
+      url,
+      views: num(get("views")),
+      likes: num(get("likes")),
+      comments: num(get("comments")),
+      shares: num(get("shares")),
+      saves: num(get("saves")),
+      followersGained: num(get("followersGained")),
+      durationSeconds: num(get("durationSeconds")),
+    });
+  }
+  return { posts, errors, matched: headerMap };
+}
+
+// analytics.js — pure functions that turn normalized posts into the performance review.
+
+const PLATFORM_COLORS = {
+  TikTok: "#ff2d55",
+  YouTube: "#ff0000",
+  Instagram: "#c13584",
+  X: "#1d9bf0",
+  Facebook: "#1877f2",
+  Unknown: "#8a8f98",
+};
+
+function platformColor(p) { return PLATFORM_COLORS[p] || "#8a8f98"; }
+
+function engagements(p) {
+  return p.likes + p.comments + p.shares + p.saves;
+}
+
+// Engagement rate as a share of views (fallbacks to 0 when no views).
+function engagementRate(p) {
+  return p.views > 0 ? engagements(p) / p.views : 0;
+}
+
+function sum(arr, f) { return arr.reduce((a, x) => a + f(x), 0); }
+function avg(arr, f) { return arr.length ? sum(arr, f) / arr.length : 0; }
+function median(nums) {
+  if (!nums.length) return 0;
+  const s = [...nums].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function percentile(nums, q) {
+  if (!nums.length) return 0;
+  const s = [...nums].sort((a, b) => a - b);
+  const idx = Math.min(s.length - 1, Math.floor(q * s.length));
+  return s[idx];
+}
+
+function fmt(n) {
+  n = Math.round(n);
+  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 1) + "M";
+  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(Math.abs(n) >= 1e4 ? 0 : 1) + "K";
+  return String(n);
+}
+function pct(x) { return (x * 100).toFixed(1) + "%"; }
+
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Which capabilities does this dataset actually support? Drives adaptive UI.
+function capabilities(posts) {
+  return {
+    hasEngagement: posts.some(p => p.likes + p.comments + p.shares + p.saves > 0),
+    hasDates: posts.some(p => p.publishedAt),
+    hasDuration: posts.some(p => p.durationSeconds > 0),
+    hasText: posts.some(p => extractHashtags(p).length || (p.title && p.title !== "(untitled)")),
+    hasHashtags: posts.some(p => extractHashtags(p).length),
+  };
+}
+
+// The main entry point: compute everything the dashboard renders.
+function analyze(posts) {
+  const dated = posts.filter(p => p.publishedAt);
+  const caps = capabilities(posts);
+  const totals = {
+    posts: posts.length,
+    views: sum(posts, p => p.views),
+    likes: sum(posts, p => p.likes),
+    comments: sum(posts, p => p.comments),
+    shares: sum(posts, p => p.shares),
+    saves: sum(posts, p => p.saves),
+    followers: sum(posts, p => p.followersGained),
+  };
+  totals.engagements = totals.likes + totals.comments + totals.shares + totals.saves;
+  totals.engagementRate = totals.views > 0 ? totals.engagements / totals.views : 0;
+  totals.medianViews = median(posts.map(p => p.views));
+  totals.avgViews = avg(posts, p => p.views);
+  totals.topViews = posts.length ? Math.max(...posts.map(p => p.views)) : 0;
+  totals.p90 = percentile(posts.map(p => p.views), 0.9);
+
+  return {
+    caps,
+    totals,
+    byPlatform: groupStats(posts, p => p.platform),
+    byAccount: groupStats(posts, p => `${p.platform} · ${p.account}`),
+    byDayOfWeek: dayOfWeekStats(dated),
+    byHour: hourStats(dated),
+    timeline: timelineStats(dated),
+    topPosts: [...posts].sort((a, b) => b.views - a.views).slice(0, 10),
+    breakout: findBreakouts(posts),
+    durationBuckets: durationStats(posts.filter(p => p.durationSeconds > 0)),
+    hashtags: hashtagStats(posts),
+    themes: themeStats(posts),
+    insights: buildInsights(posts, totals, caps),
+  };
+}
+
+// --- Text/copy analysis (hashtags + hook themes) ---
+
+function extractHashtags(p) {
+  const text = `${p.title || ""} ${p.caption || ""}`;
+  const tags = text.match(/#[\p{L}0-9_]+/gu) || [];
+  // de-dupe within a post, normalize case
+  return [...new Set(tags.map(t => t.toLowerCase()))];
+}
+
+// Average views per hashtag, for tags used on at least `minPosts` posts.
+function hashtagStats(posts, minPosts = 3) {
+  const map = {};
+  for (const p of posts) {
+    for (const tag of extractHashtags(p)) {
+      (map[tag] ||= []).push(p.views);
+    }
+  }
+  const overallAvg = avg(posts, p => p.views) || 1;
+  return Object.entries(map)
+    .filter(([, v]) => v.length >= minPosts)
+    .map(([tag, v]) => ({
+      tag,
+      posts: v.length,
+      avgViews: v.reduce((a, x) => a + x, 0) / v.length,
+      medianViews: median(v),
+      lift: (v.reduce((a, x) => a + x, 0) / v.length) / overallAvg,
+    }))
+    .sort((a, b) => b.avgViews - a.avgViews);
+}
+
+// Hook/theme taxonomy learned from The Ill Collective's copy bible.
+const THEMES = [
+  { key: "Political / censorship", test: t => /\b(trump|donald|epstein|iran|orange man|blood orange|protest|tr-?mp|white house|censor|ban|banned|pull(ing|ed)? down|silenc|frozen|freeze)\b/.test(t) },
+  { key: "“Where are you from?” bait", test: t => /where are you from|only show|geo|new zealand.*(from|where)|showing my music to/.test(t) },
+  { key: "Underdog / small artist", test: t => /\b(small|undiscovered|stumbled|scrolled upon|before (they|you|i) blow up|non-?trending|bedroom|shooting my shot|very small|not trending|little secret|gatekeep)\b/.test(t) },
+  { key: "Vulnerability / backstory", test: t => /\b(depression|addiction|lost (one|my)|grief|dad|father|survived|surviving|tough time|breathing|honest|mate)\b/.test(t) },
+  { key: "Reply to comment", test: t => /reply to|replying to/.test(t) },
+  { key: "Lyric / karaoke video", test: t => /karaoke|lyric video|lyrics only|no fixed on-screen hook|no fixed spoken/.test(t) },
+  { key: "Release / listen ask", test: t => /\b(out now|link in bio|pre-?save|dropping|drops|new single|new track|take a listen|15 seconds|20 seconds|stream|spotify)\b/.test(t) },
+];
+
+function classifyTheme(p) {
+  const t = `${p.title || ""} ${p.caption || ""}`.toLowerCase();
+  for (const theme of THEMES) if (theme.test(t)) return theme.key;
+  return "Other";
+}
+
+// Average views per hook theme.
+function themeStats(posts) {
+  const map = {};
+  for (const p of posts) (map[classifyTheme(p)] ||= []).push(p.views);
+  return Object.entries(map)
+    .map(([key, v]) => ({
+      key,
+      posts: v.length,
+      avgViews: v.reduce((a, x) => a + x, 0) / v.length,
+      medianViews: median(v),
+      totalViews: v.reduce((a, x) => a + x, 0),
+    }))
+    .sort((a, b) => b.avgViews - a.avgViews);
+}
+
+function groupStats(posts, keyFn) {
+  const groups = {};
+  for (const p of posts) {
+    const k = keyFn(p);
+    (groups[k] ||= []).push(p);
+  }
+  return Object.entries(groups).map(([key, items]) => ({
+    key,
+    posts: items.length,
+    views: sum(items, p => p.views),
+    avgViews: avg(items, p => p.views),
+    medianViews: median(items.map(p => p.views)),
+    engagements: sum(items, p => engagements(p)),
+    engagementRate: avg(items, engagementRate),
+    followers: sum(items, p => p.followersGained),
+  })).sort((a, b) => b.views - a.views);
+}
+
+function dayOfWeekStats(posts) {
+  const buckets = DOW.map((label, i) => ({ label, i, posts: 0, views: 0, er: 0 }));
+  for (const p of posts) {
+    const b = buckets[p.publishedAt.getDay()];
+    b.posts++; b.views += p.views; b.er += engagementRate(p);
+  }
+  buckets.forEach(b => {
+    b.avgViews = b.posts ? b.views / b.posts : 0;
+    b.engagementRate = b.posts ? b.er / b.posts : 0;
+  });
+  return buckets;
+}
+
+function hourStats(posts) {
+  const buckets = Array.from({ length: 24 }, (_, h) => ({ hour: h, posts: 0, views: 0, er: 0 }));
+  for (const p of posts) {
+    const b = buckets[p.publishedAt.getHours()];
+    b.posts++; b.views += p.views; b.er += engagementRate(p);
+  }
+  buckets.forEach(b => {
+    b.avgViews = b.posts ? b.views / b.posts : 0;
+    b.engagementRate = b.posts ? b.er / b.posts : 0;
+  });
+  return buckets;
+}
+
+// Weekly timeline of total views + posting cadence.
+function timelineStats(posts) {
+  if (!posts.length) return [];
+  const byWeek = {};
+  for (const p of posts) {
+    const d = new Date(p.publishedAt);
+    const day = (d.getDay() + 6) % 7; // Monday start
+    const monday = new Date(d); monday.setDate(d.getDate() - day); monday.setHours(0, 0, 0, 0);
+    const key = monday.toISOString().slice(0, 10);
+    (byWeek[key] ||= { week: key, views: 0, posts: 0, engagements: 0 });
+    byWeek[key].views += p.views;
+    byWeek[key].posts += 1;
+    byWeek[key].engagements += engagements(p);
+  }
+  return Object.values(byWeek).sort((a, b) => a.week.localeCompare(b.week));
+}
+
+function durationStats(posts) {
+  const ranges = [
+    { label: "0–15s", min: 0, max: 15 },
+    { label: "16–30s", min: 16, max: 30 },
+    { label: "31–60s", min: 31, max: 60 },
+    { label: "60s+", min: 61, max: Infinity },
+  ];
+  return ranges.map(r => {
+    const items = posts.filter(p => p.durationSeconds >= r.min && p.durationSeconds <= r.max);
+    return {
+      label: r.label,
+      posts: items.length,
+      avgViews: avg(items, p => p.views),
+      engagementRate: avg(items, engagementRate),
+    };
+  }).filter(r => r.posts > 0);
+}
+
+// Posts that beat their platform's median views by a wide margin.
+function findBreakouts(posts) {
+  const medians = {};
+  const byPlat = {};
+  for (const p of posts) (byPlat[p.platform] ||= []).push(p);
+  for (const [plat, items] of Object.entries(byPlat)) medians[plat] = median(items.map(x => x.views)) || 1;
+  return posts
+    .map(p => ({ ...p, multiple: p.views / (medians[p.platform] || 1) }))
+    .filter(p => p.multiple >= 3)
+    .sort((a, b) => b.multiple - a.multiple)
+    .slice(0, 8);
+}
+
+// Human-readable, prioritized recommendations.
+function buildInsights(posts, totals, caps = capabilities(posts)) {
+  const out = [];
+  const dated = posts.filter(p => p.publishedAt);
+
+  // Best hook theme (only when we have copy to classify).
+  if (caps.hasText) {
+    const themes = themeStats(posts).filter(t => t.posts >= 2 && t.key !== "Other");
+    if (themes.length >= 2) {
+      const best = themes[0];
+      const overall = totals.avgViews || 1;
+      out.push({
+        kind: "good",
+        title: `${best.key} — your top-performing hook angle`,
+        body: `Those posts average ${fmt(best.avgViews)} views — ${(best.avgViews / overall).toFixed(1)}× your overall average of ${fmt(overall)} across ${best.posts} posts. Lead with this angle when the news cycle allows.`,
+      });
+      const weak = themes[themes.length - 1];
+      if (weak.key !== best.key && weak.avgViews < overall * 0.75) {
+        out.push({
+          kind: "warn",
+          title: `${weak.key} hooks underperform`,
+          body: `They average just ${fmt(weak.avgViews)} views (${(weak.avgViews / overall).toFixed(1)}× overall). Use this format sparingly, or pair it with a stronger hook overlay.`,
+        });
+      }
+    }
+  }
+
+  // Best hashtag by average views.
+  if (caps.hasHashtags) {
+    const tags = hashtagStats(posts, 3);
+    if (tags.length) {
+      const best = tags[0];
+      out.push({
+        kind: "tip",
+        title: `${best.tag} is your highest-reach tag`,
+        body: `Posts using ${best.tag} average ${fmt(best.avgViews)} views — ${best.lift.toFixed(1)}× your overall average — across ${best.posts} posts. Keep it in rotation when it fits the song.`,
+      });
+    }
+  }
+
+  // Best platform by engagement rate (only if engagement data exists).
+  const plats = groupStats(posts, p => p.platform).filter(g => g.posts >= 3);
+  if (caps.hasEngagement && plats.length >= 2) {
+    const best = [...plats].sort((a, b) => b.engagementRate - a.engagementRate)[0];
+    const worst = [...plats].sort((a, b) => a.engagementRate - b.engagementRate)[0];
+    out.push({
+      kind: "good",
+      title: `${best.key} is your strongest audience`,
+      body: `It engages at ${pct(best.engagementRate)} — the highest of your platforms. ${worst.key} sits at ${pct(worst.engagementRate)}. Lead with ${best.key} for new material, then cross-post the winners.`,
+    });
+  }
+
+  // Best day of week.
+  if (dated.length >= 10) {
+    const dow = dayOfWeekStats(dated).filter(d => d.posts >= 2);
+    if (dow.length) {
+      const best = [...dow].sort((a, b) => b.avgViews - a.avgViews)[0];
+      out.push({
+        kind: "tip",
+        title: `${DOW_FULL[best.i]} posts reach the most people`,
+        body: `They average ${fmt(best.avgViews)} views vs. an overall average of ${fmt(totals.avgViews)}. Line up your best clips for ${DOW_FULL[best.i]}.`,
+      });
+    }
+  }
+
+  // Best posting window.
+  if (dated.length >= 10) {
+    const hours = hourStats(dated).filter(h => h.posts >= 2);
+    if (hours.length) {
+      const best = [...hours].sort((a, b) => b.avgViews - a.avgViews)[0];
+      out.push({
+        kind: "tip",
+        title: `Your ${hourLabel(best.hour)} window outperforms`,
+        body: `Posts published around ${hourLabel(best.hour)} average ${fmt(best.avgViews)} views. Try to schedule drops in that window.`,
+      });
+    }
+  }
+
+  // Duration signal.
+  const durs = durationStats(posts.filter(p => p.durationSeconds > 0));
+  if (durs.length >= 2) {
+    const best = [...durs].sort((a, b) => b.avgViews - a.avgViews)[0];
+    out.push({
+      kind: "tip",
+      title: `${best.label} clips land best`,
+      body: `They average ${fmt(best.avgViews)} views at a ${pct(best.engagementRate)} engagement rate. Keep cuts in that range when you can.`,
+    });
+  }
+
+  // Saves/shares — the "recommendation fuel" signal.
+  if (totals.views > 0) {
+    const shareRate = totals.shares / totals.views;
+    const saveRate = totals.saves / totals.views;
+    if (saveRate > 0.008 || shareRate > 0.008) {
+      const lead = saveRate >= shareRate ? "saves" : "shares";
+      out.push({
+        kind: "good",
+        title: `People ${lead === "saves" ? "save" : "share"} your work`,
+        body: `${lead === "saves" ? "Saves" : "Shares"} run at ${pct(lead === "saves" ? saveRate : shareRate)} of views — a strong signal to the algorithm. Make more of whatever your top ${lead}d posts have in common.`,
+      });
+    }
+  }
+
+  // Consistency check.
+  const weeks = timelineStats(dated);
+  if (weeks.length >= 4) {
+    const cadence = weeks.map(w => w.posts);
+    const gaps = cadence.filter(c => c === 0).length;
+    const spread = Math.max(...cadence) - Math.min(...cadence);
+    if (gaps > 0 || spread >= 4) {
+      out.push({
+        kind: "warn",
+        title: "Your posting cadence is uneven",
+        body: `Weekly output swings from ${Math.min(...cadence)} to ${Math.max(...cadence)} posts. A steady rhythm compounds — pick a floor (e.g. 3/week) and protect it.`,
+      });
+    }
+  }
+
+  // Hit rate: how many posts clear a "good" bar (2x median).
+  const med = median(posts.map(p => p.views)) || 1;
+  const hits = posts.filter(p => p.views >= med * 2).length;
+  out.push({
+    kind: hits / posts.length >= 0.2 ? "good" : "tip",
+    title: `${hits} of ${posts.length} posts broke out`,
+    body: `${pct(hits / posts.length)} of your posts more than doubled your median reach. ${hits / posts.length >= 0.2 ? "That is a healthy hit rate — study those posts." : "Study those winners and make more like them."}`,
+  });
+
+  return out;
+}
+
+const DOW_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+function hourLabel(h) {
+  const suffix = h < 12 ? "am" : "pm";
+  const hr = h % 12 === 0 ? 12 : h % 12;
+  return `${hr}${suffix}`;
+}
+
+// charts.js — tiny dependency-free SVG chart helpers, theme-aware via CSS vars.
+
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(name, attrs = {}, children = []) {
+  const n = document.createElementNS(SVGNS, name);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  for (const c of [].concat(children)) if (c) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  return n;
+}
+function svg(w, h) {
+  return el("svg", { viewBox: `0 0 ${w} ${h}`, width: "100%", height: h, class: "chart", preserveAspectRatio: "xMidYMid meet", role: "img" });
+}
+function axisColor() { return "var(--grid)"; }
+function textColor() { return "var(--text-dim)"; }
+
+// Horizontal bar chart. data: [{label, value, color?}]
+function barChart(container, data, { valueFmt = String, height } = {}) {
+  container.innerHTML = "";
+  if (!data.length) return;
+  const rowH = 34, padL = 130, padR = 60, padT = 6, padB = 6, w = 720;
+  const h = height || padT + padB + data.length * rowH;
+  const max = Math.max(...data.map(d => d.value), 1);
+  const s = svg(w, h);
+  data.forEach((d, i) => {
+    const y = padT + i * rowH + rowH / 2;
+    const barW = Math.max(2, (w - padL - padR) * (d.value / max));
+    s.appendChild(el("text", { x: padL - 12, y: y + 4, "text-anchor": "end", class: "c-label" }, d.label));
+    s.appendChild(el("rect", { x: padL, y: y - 11, width: barW, height: 22, rx: 5, fill: d.color || "var(--accent)" }));
+    s.appendChild(el("text", { x: padL + barW + 8, y: y + 4, class: "c-value" }, valueFmt(d.value)));
+  });
+  container.appendChild(s);
+}
+
+// Vertical column chart (e.g. by hour / day). data: [{label, value}]
+function columnChart(container, data, { valueFmt = String, highlightMax = true } = {}) {
+  container.innerHTML = "";
+  if (!data.length) return;
+  const w = 720, h = 240, padL = 40, padR = 12, padT = 16, padB = 34;
+  const max = Math.max(...data.map(d => d.value), 1);
+  const s = svg(w, h);
+  const bw = (w - padL - padR) / data.length;
+  const maxVal = Math.max(...data.map(d => d.value));
+  // baseline
+  s.appendChild(el("line", { x1: padL, y1: h - padB, x2: w - padR, y2: h - padB, stroke: axisColor() }));
+  data.forEach((d, i) => {
+    const x = padL + i * bw;
+    const barH = (h - padT - padB) * (d.value / max);
+    const isMax = highlightMax && d.value === maxVal && d.value > 0;
+    s.appendChild(el("rect", {
+      x: x + bw * 0.15, y: h - padB - barH, width: bw * 0.7, height: Math.max(0, barH),
+      rx: 3, fill: isMax ? "var(--accent)" : "var(--bar-dim)",
+    }));
+    if (data.length <= 14 || i % 2 === 0)
+      s.appendChild(el("text", { x: x + bw / 2, y: h - padB + 16, "text-anchor": "middle", class: "c-axis" }, d.label));
+    if (isMax)
+      s.appendChild(el("text", { x: x + bw / 2, y: h - padB - barH - 6, "text-anchor": "middle", class: "c-value" }, valueFmt(d.value)));
+  });
+  container.appendChild(s);
+}
+
+// Line chart with area fill for the weekly timeline. series: [{x, y}] with labels.
+function lineChart(container, points, { valueFmt = String, labelFmt = String } = {}) {
+  container.innerHTML = "";
+  if (points.length < 2) { container.innerHTML = '<p class="empty">Not enough dated posts to plot a trend.</p>'; return; }
+  const w = 720, h = 240, padL = 48, padR = 16, padT = 18, padB = 34;
+  const max = Math.max(...points.map(p => p.y), 1);
+  const s = svg(w, h);
+  const X = i => padL + (w - padL - padR) * (i / (points.length - 1));
+  const Y = v => h - padB - (h - padT - padB) * (v / max);
+  // gridlines
+  for (let g = 0; g <= 3; g++) {
+    const gy = padT + (h - padT - padB) * (g / 3);
+    s.appendChild(el("line", { x1: padL, y1: gy, x2: w - padR, y2: gy, stroke: axisColor(), "stroke-dasharray": "3 4" }));
+    s.appendChild(el("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", class: "c-axis" }, valueFmt(max * (1 - g / 3))));
+  }
+  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+  const area = `${line} L${X(points.length - 1).toFixed(1)},${h - padB} L${padL},${h - padB} Z`;
+  s.appendChild(el("path", { d: area, fill: "var(--accent-fade)" }));
+  s.appendChild(el("path", { d: line, fill: "none", stroke: "var(--accent)", "stroke-width": 2.5, "stroke-linejoin": "round" }));
+  points.forEach((p, i) => {
+    s.appendChild(el("circle", { cx: X(i), cy: Y(p.y), r: 3.5, fill: "var(--accent)" }));
+    if (points.length <= 16 && (i % Math.ceil(points.length / 8) === 0 || i === points.length - 1))
+      s.appendChild(el("text", { x: X(i), y: h - padB + 16, "text-anchor": "middle", class: "c-axis" }, labelFmt(p.x)));
+  });
+  container.appendChild(s);
+}
+
+// Donut showing view share by platform. data: [{label, value, color}]
+function donutChart(container, data) {
+  container.innerHTML = "";
+  const total = data.reduce((a, d) => a + d.value, 0);
+  if (!total) return;
+  const size = 200, r = 78, cx = size / 2, cy = size / 2, sw = 26;
+  const s = svg(size, size);
+  let angle = -Math.PI / 2;
+  data.forEach(d => {
+    const frac = d.value / total;
+    const a2 = angle + frac * Math.PI * 2;
+    const large = frac > 0.5 ? 1 : 0;
+    const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+    const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
+    if (frac > 0.999) {
+      s.appendChild(el("circle", { cx, cy, r, fill: "none", stroke: d.color, "stroke-width": sw }));
+    } else {
+      s.appendChild(el("path", {
+        d: `M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)}`,
+        fill: "none", stroke: d.color, "stroke-width": sw, "stroke-linecap": "butt",
+      }));
+    }
+    angle = a2;
+  });
+  s.appendChild(el("text", { x: cx, y: cy - 4, "text-anchor": "middle", class: "donut-total" }, String(data.length)));
+  s.appendChild(el("text", { x: cx, y: cy + 14, "text-anchor": "middle", class: "c-axis" }, "platforms"));
+  container.appendChild(s);
+}
+
+// app.js — wires the UI: load data, filter, render metrics, charts, and insights.
+
+const state = {
+  posts: [],
+  filtered: [],
+  platformFilter: "All",
+  source: "sample",
+};
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => [...document.querySelectorAll(sel)];
+
+// Default dataset: Ramon's real @theillcollective TikTok export.
+const DEFAULT_DATA = "data/theillcollective.csv";
+const DEFAULT_LABEL = "@theillcollective (your TikTok)";
+
+async function boot() {
+  wireControls();
+  try {
+    const res = await fetch(DEFAULT_DATA);
+    if (!res.ok) throw new Error("no data");
+    loadFromText(await res.text(), DEFAULT_LABEL);
+  } catch {
+    // fetch() fails under file:// — show the empty state with import prompt.
+    renderEmpty();
+  }
+}
+
+function wireControls() {
+  $("#file-input").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => loadFromText(reader.result, file.name);
+    reader.readAsText(file);
+  });
+  $("#load-mine").addEventListener("click", async () => {
+    try { loadFromText(await (await fetch(DEFAULT_DATA)).text(), DEFAULT_LABEL); }
+    catch { $("#parse-note").textContent = "Data can only auto-load over http. Use “Import CSV”."; }
+  });
+  $("#load-sample").addEventListener("click", async () => {
+    try { loadFromText(await (await fetch("data/sample.csv")).text(), "multi-platform sample"); }
+    catch { $("#parse-note").textContent = "Sample can only auto-load over http. Use “Import CSV”."; }
+  });
+  $("#paste-toggle").addEventListener("click", () => {
+    $("#paste-area").classList.toggle("hidden");
+  });
+  $("#paste-load").addEventListener("click", () => {
+    const text = $("#paste-text").value.trim();
+    if (text) loadFromText(text, "pasted");
+  });
+}
+
+function loadFromText(text, sourceName) {
+  const { posts, errors } = parsePosts(text);
+  if (!posts.length) {
+    $("#parse-note").textContent = errors[0] || "No rows found.";
+    return;
+  }
+  state.posts = posts;
+  state.source = sourceName;
+  state.platformFilter = "All";
+  const note = `Loaded ${posts.length} posts from ${sourceName}` +
+    (errors.length ? ` · ${errors.length} row${errors.length > 1 ? "s" : ""} had issues` : "");
+  $("#parse-note").textContent = note;
+  buildPlatformTabs();
+  applyFilterAndRender();
+  $("#dashboard").classList.remove("hidden");
+  $("#empty-state").classList.add("hidden");
+}
+
+function buildPlatformTabs() {
+  const platforms = ["All", ...new Set(state.posts.map(p => p.platform))];
+  const wrap = $("#platform-tabs");
+  wrap.innerHTML = "";
+  platforms.forEach(p => {
+    const b = document.createElement("button");
+    b.className = "tab" + (p === state.platformFilter ? " active" : "");
+    b.textContent = p;
+    if (p !== "All") b.style.setProperty("--dot", platformColor(p));
+    b.addEventListener("click", () => {
+      state.platformFilter = p;
+      buildPlatformTabs();
+      applyFilterAndRender();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+function applyFilterAndRender() {
+  state.filtered = state.platformFilter === "All"
+    ? state.posts
+    : state.posts.filter(p => p.platform === state.platformFilter);
+  render(analyze(state.filtered));
+}
+
+function render(a) {
+  renderKpis(a.totals, a.caps);
+  renderInsights(a.insights);
+  renderThemes(a.themes, a.caps);
+  renderHashtags(a.hashtags, a.caps);
+  renderTopPosts(a.topPosts, a.caps);
+  renderBreakouts(a.breakout);
+  renderDuration(a.durationBuckets);
+
+  // Date-dependent panels
+  show("#timeline-section", a.caps.hasDates);
+  show("#timing-row", a.caps.hasDates);
+  if (a.caps.hasDates) { renderTimeline(a.timeline); renderTiming(a.byDayOfWeek, a.byHour); }
+
+  // Platform panels only matter with more than one platform
+  const multiPlatform = a.byPlatform.length > 1;
+  show("#donut-section", multiPlatform);
+  show("#platform-section", multiPlatform);
+  if (multiPlatform) { renderDonut(a.byPlatform); renderPlatformTable(a.byPlatform); }
+}
+
+function show(sel, on) { $(sel).classList.toggle("hidden", !on); }
+
+function kpi(label, value, sub) {
+  return `<div class="kpi"><div class="kpi-value">${value}</div><div class="kpi-label">${label}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ""}</div>`;
+}
+
+function renderKpis(t, caps) {
+  const cards = [
+    kpi("Total views", fmt(t.views), `${fmt(t.avgViews)} avg · ${fmt(t.medianViews)} median`),
+    kpi("Posts", fmt(t.posts), caps.hasEngagement ? `${fmt(t.followers)} new followers` : "in this dataset"),
+    kpi("Best post", fmt(t.topViews), "peak reach"),
+  ];
+  if (caps.hasEngagement) {
+    cards.splice(1, 0, kpi("Engagement rate", pct(t.engagementRate), `${fmt(t.engagements)} total engagements`));
+    cards.push(kpi("Likes", fmt(t.likes), `${fmt(t.comments)} comments`));
+    cards.push(kpi("Shares", fmt(t.shares), `${fmt(t.saves)} saves`));
+  } else {
+    cards.push(kpi("Median views", fmt(t.medianViews), "the typical post"));
+    cards.push(kpi("Top 10% floor", fmt(t.p90), "views to reach your best tier"));
+  }
+  $("#kpis").innerHTML = cards.join("");
+}
+
+function renderThemes(themes, caps) {
+  if (!caps.hasText || themes.length < 2) { show("#theme-section", false); return; }
+  show("#theme-section", true);
+  barChart($("#theme-chart"),
+    themes.map(t => ({ label: `${t.key} (${t.posts})`, value: Math.round(t.avgViews) })),
+    { valueFmt: fmt });
+}
+
+function renderHashtags(tags, caps) {
+  if (!caps.hasHashtags || !tags.length) { show("#hashtag-section", false); return; }
+  show("#hashtag-section", true);
+  barChart($("#hashtag-chart"),
+    tags.slice(0, 12).map(t => ({ label: `${t.tag} (${t.posts})`, value: Math.round(t.avgViews) })),
+    { valueFmt: fmt });
+}
+
+function renderInsights(insights) {
+  const icons = { good: "✓", tip: "→", warn: "!", };
+  $("#insights").innerHTML = insights.map(i =>
+    `<div class="insight insight-${i.kind}">
+       <span class="insight-badge">${icons[i.kind] || "•"}</span>
+       <div><h4>${escapeHtml(i.title)}</h4><p>${escapeHtml(i.body)}</p></div>
+     </div>`
+  ).join("");
+}
+
+function renderPlatformTable(rows) {
+  const body = rows.map(r => `
+    <tr>
+      <td><span class="dot" style="background:${platformColor(r.key)}"></span>${escapeHtml(r.key)}</td>
+      <td>${fmt(r.posts)}</td>
+      <td>${fmt(r.views)}</td>
+      <td>${fmt(r.avgViews)}</td>
+      <td>${pct(r.engagementRate)}</td>
+      <td>${fmt(r.followers)}</td>
+    </tr>`).join("");
+  $("#platform-table").innerHTML = `
+    <table>
+      <thead><tr><th>Platform</th><th>Posts</th><th>Views</th><th>Avg views</th><th>Eng. rate</th><th>Followers</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+function renderTimeline(weeks) {
+  lineChart($("#timeline-chart"),
+    weeks.map(w => ({ x: w.week, y: w.views })),
+    { valueFmt: fmt, labelFmt: iso => iso.slice(5) });
+}
+
+function renderTiming(dow, hours) {
+  columnChart($("#dow-chart"), dow.map(d => ({ label: d.label, value: Math.round(d.avgViews) })), { valueFmt: fmt });
+  columnChart($("#hour-chart"),
+    hours.map(h => ({ label: `${h.hour}`, value: Math.round(h.avgViews) })), { valueFmt: fmt });
+}
+
+function renderDonut(byPlatform) {
+  donutChart($("#donut-chart"), byPlatform.map(p => ({ label: p.key, value: p.views, color: platformColor(p.key) })));
+  $("#donut-legend").innerHTML = byPlatform.map(p =>
+    `<li><span class="dot" style="background:${platformColor(p.key)}"></span>${escapeHtml(p.key)} <b>${pct(p.views / Math.max(1, byPlatform.reduce((a, x) => a + x.views, 0)))}</b></li>`
+  ).join("");
+}
+
+function renderTopPosts(posts, caps) {
+  $("#top-posts").innerHTML = posts.map((p, i) => {
+    const meta = [escapeHtml(p.account), p.publishedAt ? p.publishedAt.toLocaleDateString() : null]
+      .filter(Boolean).join(" · ");
+    const stats = caps.hasEngagement
+      ? `<b>${fmt(p.views)}</b> views · ${pct(engagementRate(p))} eng.`
+      : `<b>${fmt(p.views)}</b> views`;
+    return `
+    <li>
+      <span class="rank">${i + 1}</span>
+      <span class="dot" style="background:${platformColor(p.platform)}" title="${escapeHtml(p.platform)}"></span>
+      <div class="post-main">
+        ${p.url ? `<a href="${escapeAttr(p.url)}" target="_blank" rel="noopener">${escapeHtml(truncate(p.title, 60))}</a>`
+                : `<span>${escapeHtml(truncate(p.title, 60))}</span>`}
+        ${meta ? `<div class="post-meta">${meta}</div>` : ""}
+      </div>
+      <div class="post-stats">${stats}</div>
+    </li>`;
+  }).join("");
+}
+
+function renderBreakouts(breakouts) {
+  const wrap = $("#breakout-section");
+  if (!breakouts.length) { wrap.classList.add("hidden"); return; }
+  wrap.classList.remove("hidden");
+  $("#breakouts").innerHTML = breakouts.map(p => `
+    <div class="breakout-card">
+      <div class="breakout-mult">${p.multiple.toFixed(1)}×</div>
+      <div>
+        <div class="breakout-title">${escapeHtml(truncate(p.title, 44))}</div>
+        <div class="post-meta"><span class="dot" style="background:${platformColor(p.platform)}"></span>${escapeHtml(p.platform)} · ${fmt(p.views)} views</div>
+      </div>
+    </div>`).join("");
+}
+
+function renderDuration(buckets) {
+  const wrap = $("#duration-section");
+  if (!buckets.length) { wrap.classList.add("hidden"); return; }
+  wrap.classList.remove("hidden");
+  barChart($("#duration-chart"),
+    buckets.map(b => ({ label: `${b.label} (${b.posts})`, value: Math.round(b.avgViews) })),
+    { valueFmt: fmt });
+}
+
+function renderEmpty() {
+  $("#dashboard").classList.add("hidden");
+  $("#empty-state").classList.remove("hidden");
+}
+
+// --- small helpers ---
+function truncate(s, n) { return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+document.addEventListener("DOMContentLoaded", boot);
+
+</script>
+</body>
+</html>
