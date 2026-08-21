@@ -17,6 +17,7 @@
       </div>
     </div>
     <div class="controls">
+      <button id="load-mine" class="btn ghost">My TikTok</button>
       <button id="load-sample" class="btn ghost">Sample data</button>
       <button id="paste-toggle" class="btn ghost">Paste CSV</button>
       <label class="btn primary">
@@ -54,12 +55,12 @@
       <div id="insights" class="insights"></div>
     </section>
 
-    <div class="grid-2">
-      <section class="panel">
+    <div id="trend-row" class="grid-2">
+      <section id="timeline-section" class="panel">
         <h3 class="panel-title">Views over time <span class="sub">by week</span></h3>
         <div id="timeline-chart" class="chart-holder"></div>
       </section>
-      <section class="panel">
+      <section id="donut-section" class="panel">
         <h3 class="panel-title">View share <span class="sub">by platform</span></h3>
         <div class="donut-wrap">
           <div id="donut-chart"></div>
@@ -68,12 +69,12 @@
       </section>
     </div>
 
-    <section class="panel">
+    <section id="platform-section" class="panel">
       <h3 class="panel-title">Platform breakdown</h3>
       <div id="platform-table" class="table-holder"></div>
     </section>
 
-    <div class="grid-2">
+    <div id="timing-row" class="grid-2">
       <section class="panel">
         <h3 class="panel-title">Best day to post <span class="sub">avg views</span></h3>
         <div id="dow-chart" class="chart-holder"></div>
@@ -83,6 +84,16 @@
         <div id="hour-chart" class="chart-holder"></div>
       </section>
     </div>
+
+    <section id="theme-section" class="panel hidden">
+      <h3 class="panel-title">Hook themes <span class="sub">avg views by angle</span></h3>
+      <div id="theme-chart" class="chart-holder"></div>
+    </section>
+
+    <section id="hashtag-section" class="panel hidden">
+      <h3 class="panel-title">Hashtag performance <span class="sub">avg views · tags used 3+ times</span></h3>
+      <div id="hashtag-chart" class="chart-holder"></div>
+    </section>
 
     <section id="duration-section" class="panel hidden">
       <h3 class="panel-title">Clip length vs. reach <span class="sub">avg views</span></h3>

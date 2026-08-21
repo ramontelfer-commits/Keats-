@@ -5,7 +5,8 @@ const COLUMN_ALIASES = {
   platform:   ["platform", "network", "channel type", "source"],
   account:    ["account", "handle", "username", "channel", "profile", "page"],
   publishedAt:["published_at", "date", "posted", "publish date", "post date", "time", "created", "datetime", "published"],
-  title:      ["title", "caption", "description", "text", "post", "name"],
+  title:      ["title", "hook", "on-screen hook", "post", "name"],
+  caption:    ["caption", "description", "text", "body"],
   url:        ["url", "link", "permalink", "post url"],
   views:      ["views", "impressions", "plays", "reach", "video views"],
   likes:      ["likes", "reactions", "favorites", "hearts"],
@@ -107,11 +108,15 @@ function parsePosts(text) {
       errors.push(`Row ${i + 1}: unrecognized date "${rawDate}"`);
     }
     const url = (get("url") || "").trim();
+    const caption = (get("caption") || "").trim();
+    let title = (get("title") || "").trim();
+    if (!title) title = caption ? caption : "(untitled)";
     posts.push({
       platform: normalizePlatform(get("platform"), url),
       account: (get("account") || "—").trim(),
       publishedAt: date && !isNaN(date.getTime()) ? date : null,
-      title: (get("title") || "(untitled)").trim(),
+      title,
+      caption,
       url,
       views: num(get("views")),
       likes: num(get("likes")),

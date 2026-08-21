@@ -28,6 +28,12 @@ function median(nums) {
   const m = Math.floor(s.length / 2);
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
+function percentile(nums, q) {
+  if (!nums.length) return 0;
+  const s = [...nums].sort((a, b) => a - b);
+  const idx = Math.min(s.length - 1, Math.floor(q * s.length));
+  return s[idx];
+}
 
 function fmt(n) {
   n = Math.round(n);
@@ -39,9 +45,21 @@ function pct(x) { return (x * 100).toFixed(1) + "%"; }
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// Which capabilities does this dataset actually support? Drives adaptive UI.
+function capabilities(posts) {
+  return {
+    hasEngagement: posts.some(p => p.likes + p.comments + p.shares + p.saves > 0),
+    hasDates: posts.some(p => p.publishedAt),
+    hasDuration: posts.some(p => p.durationSeconds > 0),
+    hasText: posts.some(p => extractHashtags(p).length || (p.title && p.title !== "(untitled)")),
+    hasHashtags: posts.some(p => extractHashtags(p).length),
+  };
+}
+
 // The main entry point: compute everything the dashboard renders.
 function analyze(posts) {
   const dated = posts.filter(p => p.publishedAt);
+  const caps = capabilities(posts);
   const totals = {
     posts: posts.length,
     views: sum(posts, p => p.views),
@@ -55,8 +73,11 @@ function analyze(posts) {
   totals.engagementRate = totals.views > 0 ? totals.engagements / totals.views : 0;
   totals.medianViews = median(posts.map(p => p.views));
   totals.avgViews = avg(posts, p => p.views);
+  totals.topViews = posts.length ? Math.max(...posts.map(p => p.views)) : 0;
+  totals.p90 = percentile(posts.map(p => p.views), 0.9);
 
   return {
+    caps,
     totals,
     byPlatform: groupStats(posts, p => p.platform),
     byAccount: groupStats(posts, p => `${p.platform} · ${p.account}`),
@@ -66,8 +87,72 @@ function analyze(posts) {
     topPosts: [...posts].sort((a, b) => b.views - a.views).slice(0, 10),
     breakout: findBreakouts(posts),
     durationBuckets: durationStats(posts.filter(p => p.durationSeconds > 0)),
-    insights: buildInsights(posts, totals),
+    hashtags: hashtagStats(posts),
+    themes: themeStats(posts),
+    insights: buildInsights(posts, totals, caps),
   };
+}
+
+// --- Text/copy analysis (hashtags + hook themes) ---
+
+function extractHashtags(p) {
+  const text = `${p.title || ""} ${p.caption || ""}`;
+  const tags = text.match(/#[\p{L}0-9_]+/gu) || [];
+  // de-dupe within a post, normalize case
+  return [...new Set(tags.map(t => t.toLowerCase()))];
+}
+
+// Average views per hashtag, for tags used on at least `minPosts` posts.
+function hashtagStats(posts, minPosts = 3) {
+  const map = {};
+  for (const p of posts) {
+    for (const tag of extractHashtags(p)) {
+      (map[tag] ||= []).push(p.views);
+    }
+  }
+  const overallAvg = avg(posts, p => p.views) || 1;
+  return Object.entries(map)
+    .filter(([, v]) => v.length >= minPosts)
+    .map(([tag, v]) => ({
+      tag,
+      posts: v.length,
+      avgViews: v.reduce((a, x) => a + x, 0) / v.length,
+      medianViews: median(v),
+      lift: (v.reduce((a, x) => a + x, 0) / v.length) / overallAvg,
+    }))
+    .sort((a, b) => b.avgViews - a.avgViews);
+}
+
+// Hook/theme taxonomy learned from The Ill Collective's copy bible.
+const THEMES = [
+  { key: "Political / censorship", test: t => /\b(trump|donald|epstein|iran|orange man|blood orange|protest|tr-?mp|white house|censor|ban|banned|pull(ing|ed)? down|silenc|frozen|freeze)\b/.test(t) },
+  { key: "“Where are you from?” bait", test: t => /where are you from|only show|geo|new zealand.*(from|where)|showing my music to/.test(t) },
+  { key: "Underdog / small artist", test: t => /\b(small|undiscovered|stumbled|scrolled upon|before (they|you|i) blow up|non-?trending|bedroom|shooting my shot|very small|not trending|little secret|gatekeep)\b/.test(t) },
+  { key: "Vulnerability / backstory", test: t => /\b(depression|addiction|lost (one|my)|grief|dad|father|survived|surviving|tough time|breathing|honest|mate)\b/.test(t) },
+  { key: "Reply to comment", test: t => /reply to|replying to/.test(t) },
+  { key: "Lyric / karaoke video", test: t => /karaoke|lyric video|lyrics only|no fixed on-screen hook|no fixed spoken/.test(t) },
+  { key: "Release / listen ask", test: t => /\b(out now|link in bio|pre-?save|dropping|drops|new single|new track|take a listen|15 seconds|20 seconds|stream|spotify)\b/.test(t) },
+];
+
+function classifyTheme(p) {
+  const t = `${p.title || ""} ${p.caption || ""}`.toLowerCase();
+  for (const theme of THEMES) if (theme.test(t)) return theme.key;
+  return "Other";
+}
+
+// Average views per hook theme.
+function themeStats(posts) {
+  const map = {};
+  for (const p of posts) (map[classifyTheme(p)] ||= []).push(p.views);
+  return Object.entries(map)
+    .map(([key, v]) => ({
+      key,
+      posts: v.length,
+      avgViews: v.reduce((a, x) => a + x, 0) / v.length,
+      medianViews: median(v),
+      totalViews: v.reduce((a, x) => a + x, 0),
+    }))
+    .sort((a, b) => b.avgViews - a.avgViews);
 }
 
 function groupStats(posts, keyFn) {
@@ -163,13 +248,48 @@ function findBreakouts(posts) {
 }
 
 // Human-readable, prioritized recommendations.
-function buildInsights(posts, totals) {
+function buildInsights(posts, totals, caps = capabilities(posts)) {
   const out = [];
   const dated = posts.filter(p => p.publishedAt);
 
-  // Best platform by engagement rate (min 3 posts to be meaningful).
+  // Best hook theme (only when we have copy to classify).
+  if (caps.hasText) {
+    const themes = themeStats(posts).filter(t => t.posts >= 2 && t.key !== "Other");
+    if (themes.length >= 2) {
+      const best = themes[0];
+      const overall = totals.avgViews || 1;
+      out.push({
+        kind: "good",
+        title: `${best.key} — your top-performing hook angle`,
+        body: `Those posts average ${fmt(best.avgViews)} views — ${(best.avgViews / overall).toFixed(1)}× your overall average of ${fmt(overall)} across ${best.posts} posts. Lead with this angle when the news cycle allows.`,
+      });
+      const weak = themes[themes.length - 1];
+      if (weak.key !== best.key && weak.avgViews < overall * 0.75) {
+        out.push({
+          kind: "warn",
+          title: `${weak.key} hooks underperform`,
+          body: `They average just ${fmt(weak.avgViews)} views (${(weak.avgViews / overall).toFixed(1)}× overall). Use this format sparingly, or pair it with a stronger hook overlay.`,
+        });
+      }
+    }
+  }
+
+  // Best hashtag by average views.
+  if (caps.hasHashtags) {
+    const tags = hashtagStats(posts, 3);
+    if (tags.length) {
+      const best = tags[0];
+      out.push({
+        kind: "tip",
+        title: `${best.tag} is your highest-reach tag`,
+        body: `Posts using ${best.tag} average ${fmt(best.avgViews)} views — ${best.lift.toFixed(1)}× your overall average — across ${best.posts} posts. Keep it in rotation when it fits the song.`,
+      });
+    }
+  }
+
+  // Best platform by engagement rate (only if engagement data exists).
   const plats = groupStats(posts, p => p.platform).filter(g => g.posts >= 3);
-  if (plats.length >= 2) {
+  if (caps.hasEngagement && plats.length >= 2) {
     const best = [...plats].sort((a, b) => b.engagementRate - a.engagementRate)[0];
     const worst = [...plats].sort((a, b) => a.engagementRate - b.engagementRate)[0];
     out.push({

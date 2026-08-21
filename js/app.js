@@ -10,13 +10,16 @@ const state = {
 const $ = sel => document.querySelector(sel);
 const $$ = sel => [...document.querySelectorAll(sel)];
 
+// Default dataset: Ramon's real @theillcollective TikTok export.
+const DEFAULT_DATA = "data/theillcollective.csv";
+const DEFAULT_LABEL = "@theillcollective (your TikTok)";
+
 async function boot() {
   wireControls();
   try {
-    const res = await fetch("data/sample.csv");
-    if (!res.ok) throw new Error("no sample");
-    const text = await res.text();
-    loadFromText(text, "sample");
+    const res = await fetch(DEFAULT_DATA);
+    if (!res.ok) throw new Error("no data");
+    loadFromText(await res.text(), DEFAULT_LABEL);
   } catch {
     // fetch() fails under file:// — show the empty state with import prompt.
     renderEmpty();
@@ -31,13 +34,13 @@ function wireControls() {
     reader.onload = () => loadFromText(reader.result, file.name);
     reader.readAsText(file);
   });
+  $("#load-mine").addEventListener("click", async () => {
+    try { loadFromText(await (await fetch(DEFAULT_DATA)).text(), DEFAULT_LABEL); }
+    catch { $("#parse-note").textContent = "Data can only auto-load over http. Use “Import CSV”."; }
+  });
   $("#load-sample").addEventListener("click", async () => {
-    try {
-      const res = await fetch("data/sample.csv");
-      loadFromText(await res.text(), "sample");
-    } catch {
-      $("#parse-note").textContent = "Sample data can only auto-load when served over http. Use “Import CSV”.";
-    }
+    try { loadFromText(await (await fetch("data/sample.csv")).text(), "multi-platform sample"); }
+    catch { $("#parse-note").textContent = "Sample can only auto-load over http. Use “Import CSV”."; }
   });
   $("#paste-toggle").addEventListener("click", () => {
     $("#paste-area").classList.toggle("hidden");
@@ -92,29 +95,63 @@ function applyFilterAndRender() {
 }
 
 function render(a) {
-  renderKpis(a.totals);
+  renderKpis(a.totals, a.caps);
   renderInsights(a.insights);
-  renderPlatformTable(a.byPlatform);
-  renderTimeline(a.timeline);
-  renderTiming(a.byDayOfWeek, a.byHour);
-  renderDonut(a.byPlatform);
-  renderTopPosts(a.topPosts);
+  renderThemes(a.themes, a.caps);
+  renderHashtags(a.hashtags, a.caps);
+  renderTopPosts(a.topPosts, a.caps);
   renderBreakouts(a.breakout);
   renderDuration(a.durationBuckets);
+
+  // Date-dependent panels
+  show("#timeline-section", a.caps.hasDates);
+  show("#timing-row", a.caps.hasDates);
+  if (a.caps.hasDates) { renderTimeline(a.timeline); renderTiming(a.byDayOfWeek, a.byHour); }
+
+  // Platform panels only matter with more than one platform
+  const multiPlatform = a.byPlatform.length > 1;
+  show("#donut-section", multiPlatform);
+  show("#platform-section", multiPlatform);
+  if (multiPlatform) { renderDonut(a.byPlatform); renderPlatformTable(a.byPlatform); }
 }
+
+function show(sel, on) { $(sel).classList.toggle("hidden", !on); }
 
 function kpi(label, value, sub) {
   return `<div class="kpi"><div class="kpi-value">${value}</div><div class="kpi-label">${label}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ""}</div>`;
 }
 
-function renderKpis(t) {
-  $("#kpis").innerHTML = [
+function renderKpis(t, caps) {
+  const cards = [
     kpi("Total views", fmt(t.views), `${fmt(t.avgViews)} avg · ${fmt(t.medianViews)} median`),
-    kpi("Engagement rate", pct(t.engagementRate), `${fmt(t.engagements)} total engagements`),
-    kpi("Posts", fmt(t.posts), `${fmt(t.followers)} new followers`),
-    kpi("Likes", fmt(t.likes), `${fmt(t.comments)} comments`),
-    kpi("Shares", fmt(t.shares), `${fmt(t.saves)} saves`),
-  ].join("");
+    kpi("Posts", fmt(t.posts), caps.hasEngagement ? `${fmt(t.followers)} new followers` : "in this dataset"),
+    kpi("Best post", fmt(t.topViews), "peak reach"),
+  ];
+  if (caps.hasEngagement) {
+    cards.splice(1, 0, kpi("Engagement rate", pct(t.engagementRate), `${fmt(t.engagements)} total engagements`));
+    cards.push(kpi("Likes", fmt(t.likes), `${fmt(t.comments)} comments`));
+    cards.push(kpi("Shares", fmt(t.shares), `${fmt(t.saves)} saves`));
+  } else {
+    cards.push(kpi("Median views", fmt(t.medianViews), "the typical post"));
+    cards.push(kpi("Top 10% floor", fmt(t.p90), "views to reach your best tier"));
+  }
+  $("#kpis").innerHTML = cards.join("");
+}
+
+function renderThemes(themes, caps) {
+  if (!caps.hasText || themes.length < 2) { show("#theme-section", false); return; }
+  show("#theme-section", true);
+  barChart($("#theme-chart"),
+    themes.map(t => ({ label: `${t.key} (${t.posts})`, value: Math.round(t.avgViews) })),
+    { valueFmt: fmt });
+}
+
+function renderHashtags(tags, caps) {
+  if (!caps.hasHashtags || !tags.length) { show("#hashtag-section", false); return; }
+  show("#hashtag-section", true);
+  barChart($("#hashtag-chart"),
+    tags.slice(0, 12).map(t => ({ label: `${t.tag} (${t.posts})`, value: Math.round(t.avgViews) })),
+    { valueFmt: fmt });
 }
 
 function renderInsights(insights) {
@@ -163,18 +200,25 @@ function renderDonut(byPlatform) {
   ).join("");
 }
 
-function renderTopPosts(posts) {
-  $("#top-posts").innerHTML = posts.map((p, i) => `
+function renderTopPosts(posts, caps) {
+  $("#top-posts").innerHTML = posts.map((p, i) => {
+    const meta = [escapeHtml(p.account), p.publishedAt ? p.publishedAt.toLocaleDateString() : null]
+      .filter(Boolean).join(" · ");
+    const stats = caps.hasEngagement
+      ? `<b>${fmt(p.views)}</b> views · ${pct(engagementRate(p))} eng.`
+      : `<b>${fmt(p.views)}</b> views`;
+    return `
     <li>
       <span class="rank">${i + 1}</span>
       <span class="dot" style="background:${platformColor(p.platform)}" title="${escapeHtml(p.platform)}"></span>
       <div class="post-main">
         ${p.url ? `<a href="${escapeAttr(p.url)}" target="_blank" rel="noopener">${escapeHtml(truncate(p.title, 60))}</a>`
                 : `<span>${escapeHtml(truncate(p.title, 60))}</span>`}
-        <div class="post-meta">${escapeHtml(p.account)} · ${p.publishedAt ? p.publishedAt.toLocaleDateString() : "—"}</div>
+        ${meta ? `<div class="post-meta">${meta}</div>` : ""}
       </div>
-      <div class="post-stats"><b>${fmt(p.views)}</b> views · ${pct(engagementRate(p))} eng.</div>
-    </li>`).join("");
+      <div class="post-stats">${stats}</div>
+    </li>`;
+  }).join("");
 }
 
 function renderBreakouts(breakouts) {

@@ -17,8 +17,23 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-The bundled sample dataset (`data/sample.csv`, 180 posts across three platforms)
-loads automatically so you can see the whole thing working immediately.
+On load it opens **@theillcollective**'s real dataset (`data/theillcollective.csv`,
+55 posts, actual view counts and copy). The top bar switches between:
+
+- **My TikTok** — the real @theillcollective data.
+- **Sample data** — a synthetic 180-post, three-platform demo (`data/sample.csv`).
+- **Import CSV / Paste CSV** — your own export.
+
+### Adaptive panels
+
+The review adapts to whatever columns your data actually has. The @theillcollective
+export is views + copy only (no likes/dates), so Signal automatically:
+
+- drops the engagement-rate and posting-time panels (nothing to compute), and
+- surfaces two analyses driven by the copy it *does* have — **hook themes** and
+  **hashtag performance**.
+
+Give it a richer export (with likes, dates, durations) and those panels come back.
 
 > Opening `index.html` directly from the filesystem also works, but browsers block
 > `fetch()` over `file://`, so the sample won't auto-load — use **Import CSV** or
@@ -59,6 +74,11 @@ Unknown columns are ignored; missing columns default to zero. At minimum you nee
 - **View share by platform** and a full platform breakdown table.
 - **Best day / best hour to post** — average views by day of week and hour.
 - **Clip length vs. reach** — how video duration relates to views.
+- **Hook themes** — average views by hook angle (political/censorship, "where are you
+  from?" bait, underdog, vulnerability, reply, lyric video, release ask). Classified
+  from your on-screen hook and caption.
+- **Hashtag performance** — average views per hashtag (for tags used 3+ times), so you
+  can see which actually correlate with reach.
 - **Breakout posts** — anything that beat its platform's median reach by 3× or more.
 - **Top 10 posts** by views.
 
@@ -74,7 +94,8 @@ js/parse.js         flexible CSV parsing + normalization
 js/analytics.js     metrics + the insight/recommendation engine
 js/charts.js        dependency-free SVG charts
 js/app.js           UI wiring
-data/sample.csv     bundled demo dataset
+data/theillcollective.csv  real @theillcollective TikTok dataset (default)
+data/sample.csv     synthetic multi-platform demo dataset
 ```
 
 No build step, no dependencies.
