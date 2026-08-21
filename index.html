@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signal — Social Media Performance Review</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236ea8fe'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='white'%3E%E2%97%8E%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◎</span>
+      <div>
+        <h1>Signal</h1>
+        <p class="tagline">Social media performance review</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="load-sample" class="btn ghost">Sample data</button>
+      <button id="paste-toggle" class="btn ghost">Paste CSV</button>
+      <label class="btn primary">
+        Import CSV
+        <input id="file-input" type="file" accept=".csv,text/csv" hidden />
+      </label>
+    </div>
+  </header>
+
+  <div id="paste-area" class="paste-area hidden">
+    <textarea id="paste-text" placeholder="Paste CSV rows here (platform,account,published_at,title,url,views,likes,comments,shares,saves,followers_gained,duration_seconds)"></textarea>
+    <button id="paste-load" class="btn primary">Analyze</button>
+  </div>
+
+  <p id="parse-note" class="parse-note"></p>
+
+  <div id="platform-tabs" class="platform-tabs"></div>
+
+  <!-- Empty state (shown when data can't auto-load, e.g. opened via file://) -->
+  <section id="empty-state" class="empty-state hidden">
+    <h2>Drop in your numbers</h2>
+    <p>Import a CSV export from TikTok, YouTube, or Instagram — or click <b>Sample data</b> to see how it works.
+       Serve the folder over http (<code>python3 -m http.server</code>) to auto-load the sample.</p>
+    <p class="hint">Expected columns: platform, account, published_at, title, url, views, likes, comments, shares, saves, followers_gained, duration_seconds. Unknown columns are ignored; missing ones default to zero.</p>
+  </section>
+
+  <main id="dashboard" class="dashboard hidden">
+    <section class="panel">
+      <h3 class="panel-title">Overview</h3>
+      <div id="kpis" class="kpi-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h3 class="panel-title">What the numbers say</h3>
+      <div id="insights" class="insights"></div>
+    </section>
+
+    <div class="grid-2">
+      <section class="panel">
+        <h3 class="panel-title">Views over time <span class="sub">by week</span></h3>
+        <div id="timeline-chart" class="chart-holder"></div>
+      </section>
+      <section class="panel">
+        <h3 class="panel-title">View share <span class="sub">by platform</span></h3>
+        <div class="donut-wrap">
+          <div id="donut-chart"></div>
+          <ul id="donut-legend" class="legend"></ul>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h3 class="panel-title">Platform breakdown</h3>
+      <div id="platform-table" class="table-holder"></div>
+    </section>
+
+    <div class="grid-2">
+      <section class="panel">
+        <h3 class="panel-title">Best day to post <span class="sub">avg views</span></h3>
+        <div id="dow-chart" class="chart-holder"></div>
+      </section>
+      <section class="panel">
+        <h3 class="panel-title">Best hour to post <span class="sub">avg views · 24h</span></h3>
+        <div id="hour-chart" class="chart-holder"></div>
+      </section>
+    </div>
+
+    <section id="duration-section" class="panel hidden">
+      <h3 class="panel-title">Clip length vs. reach <span class="sub">avg views</span></h3>
+      <div id="duration-chart" class="chart-holder"></div>
+    </section>
+
+    <section id="breakout-section" class="panel hidden">
+      <h3 class="panel-title">Breakout posts <span class="sub">3×+ your platform median</span></h3>
+      <div id="breakouts" class="breakout-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h3 class="panel-title">Top 10 posts <span class="sub">by views</span></h3>
+      <ol id="top-posts" class="top-posts"></ol>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Signal runs entirely in your browser — your data never leaves this page.</p>
+  </footer>
+
+  <script src="js/parse.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
