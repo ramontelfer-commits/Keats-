@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blood Orange Teardown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  /* light theme (deliberately secondary — dark is the primary experience) */
+  --bg: #f6f1e9;
+  --panel: #fffdf9;
+  --panel-2: #f0e9dd;
+  --ink: #1c1613;
+  --ink-dim: #6b6156;
+  --line: #e2d8c8;
+  --accent: #d63c14;      /* blood orange */
+  --accent-soft: rgba(214, 60, 20, 0.12);
+  --drag: #9a9187;        /* under-baseline neutral */
+  --track: #ece4d6;
+  --gold: #b8801f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141010;
+    --panel: #1d1815;
+    --panel-2: #241d19;
+    --ink: #f3ede2;
+    --ink-dim: #a89d8e;
+    --line: #322822;
+    --accent: #ff5a24;
+    --accent-soft: rgba(255, 90, 36, 0.16);
+    --drag: #6f665d;
+    --track: #2a221d;
+    --gold: #e0a92e;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141010;
+  --panel: #1d1815;
+  --panel-2: #241d19;
+  --ink: #f3ede2;
+  --ink-dim: #a89d8e;
+  --line: #322822;
+  --accent: #ff5a24;
+  --accent-soft: rgba(255, 90, 36, 0.16);
+  --drag: #6f665d;
+  --track: #2a221d;
+  --gold: #e0a92e;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 18px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+/* ---- type ---- */
+.display { font-family: "Anton", Impact, sans-serif; font-weight: 400; letter-spacing: .01em; line-height: .96; text-transform: uppercase; }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+h2.section { font-family: "Anton", Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .015em; font-size: clamp(30px, 6vw, 52px); line-height: 1; margin: 0 0 6px; text-wrap: balance; }
+.eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); margin: 0 0 18px; }
+p { margin: 0 0 18px; max-width: 66ch; }
+strong { font-weight: 500; color: var(--ink); }
+em { font-style: italic; }
+a { color: var(--accent); }
+
+/* ---- masthead ---- */
+.masthead { padding: clamp(44px, 9vw, 96px) 0 40px; border-bottom: 2px solid var(--ink); }
+.kicker { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-dim); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+.kicker b { color: var(--accent); font-weight: 600; }
+h1.title { font-family: "Anton", Impact, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .01em; font-size: clamp(52px, 13vw, 128px); line-height: .9; margin: 0; }
+h1.title .o { color: var(--accent); }
+.dek { font-size: clamp(19px, 2.4vw, 23px); color: var(--ink-dim); font-style: italic; margin-top: 22px; max-width: 60ch; }
+
+/* ---- hero stat row ---- */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 40px 0 8px; }
+.stat { background: var(--bg); padding: 20px 18px; }
+.stat .n { font-family: "Anton", sans-serif; font-size: clamp(30px, 6vw, 46px); line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.stat .n .u { color: var(--accent); }
+.stat .l { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin-top: 8px; }
+@media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+section { padding: 58px 0; border-bottom: 1px solid var(--line); }
+.lede { font-size: clamp(20px, 2.5vw, 24px); line-height: 1.5; }
+.lede strong { color: var(--accent); font-weight: 500; }
+
+/* ---- figure / chart ---- */
+figure { margin: 30px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 22px 22px 16px; }
+figcaption { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .04em; color: var(--ink-dim); margin-top: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+figcaption .t { color: var(--ink); font-weight: 600; text-transform: uppercase; letter-spacing: .12em; }
+.chart { width: 100%; }
+.bar-row { display: grid; grid-template-columns: 1fr; gap: 9px; }
+.bar { display: grid; grid-template-columns: 190px 1fr; align-items: center; gap: 14px; cursor: default; }
+.bar .name { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink); text-align: right; line-height: 1.25; }
+.bar .name .sub { color: var(--ink-dim); font-size: 11px; }
+.bar .track { position: relative; height: 26px; background: var(--track); border-radius: 4px; }
+.bar .fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; min-width: 3px; transition: width .9s cubic-bezier(.2,.7,.2,1); }
+.bar .fill.win { background: var(--accent); }
+.bar .fill.drag { background: var(--drag); }
+.bar .val { position: absolute; top: 50%; transform: translateY(-50%); font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.baseline-note { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-dim); margin-top: 14px; display: flex; align-items: center; gap: 8px; }
+.baseline-note .swatch { width: 22px; height: 3px; background: var(--ink-dim); display: inline-block; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-dim); margin-top: 4px; }
+.legend i { width: 11px; height: 11px; border-radius: 2px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+
+@media (max-width: 560px) { .bar { grid-template-columns: 120px 1fr; gap: 10px; } .bar .name { font-size: 11px; } }
+
+/* ---- rule cards ---- */
+.rules { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin-top: 28px; }
+.rule { background: var(--panel); padding: 24px; display: grid; grid-template-columns: 128px 1fr; gap: 24px; align-items: start; }
+.rule .big { font-family: "Anton", sans-serif; font-size: 46px; line-height: .92; color: var(--accent); font-variant-numeric: tabular-nums; }
+.rule .big .x { font-size: 24px; color: var(--ink-dim); }
+.rule h3 { font-family: "Newsreader", serif; font-weight: 500; font-size: 21px; margin: 0 0 8px; line-height: 1.2; }
+.rule p { font-size: 16px; margin: 0 0 12px; color: var(--ink-dim); }
+.rule p strong { color: var(--ink); }
+.quote { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; line-height: 1.5; color: var(--ink); background: var(--panel-2); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 4px 4px 0; }
+.quote .m { color: var(--accent); font-weight: 600; }
+@media (max-width: 560px) { .rule { grid-template-columns: 1fr; gap: 10px; } .rule .big { font-size: 40px; } }
+
+/* ---- formula ---- */
+.formula { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 30px; margin-top: 26px; }
+.formula ol { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 16px; }
+.formula li { counter-increment: step; display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start; }
+.formula li::before { content: counter(step); font-family: "Anton", sans-serif; font-size: 22px; color: var(--accent); line-height: 1.2; }
+.formula li b { display: block; color: var(--ink); font-family: "Newsreader", serif; font-weight: 600; margin-bottom: 2px; }
+.formula li span { display: block; color: var(--ink-dim); font-size: 16px; }
+.recipe { font-family: "IBM Plex Mono", monospace; font-size: 13px; line-height: 1.7; background: var(--panel-2); border-radius: 4px; padding: 18px; margin-top: 24px; color: var(--ink); }
+.recipe .h { color: var(--accent); }
+.recipe .tag { color: var(--gold); }
+
+/* ---- kill list ---- */
+.kill { display: grid; gap: 12px; margin-top: 24px; }
+.kill .item { display: grid; grid-template-columns: 88px 1fr; gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.kill .item:last-child { border-bottom: none; }
+.kill .n { font-family: "Anton", sans-serif; font-size: 26px; color: var(--drag); font-variant-numeric: tabular-nums; }
+.kill .n .u { font-size: 14px; }
+.kill .d b { font-weight: 500; }
+.kill .d { font-size: 16px; color: var(--ink-dim); }
+.kill .d b { color: var(--ink); }
+
+.caveat { font-size: 15px; color: var(--ink-dim); font-style: italic; }
+.caveat strong { color: var(--ink); font-style: normal; font-weight: 500; }
+
+footer { padding: 46px 0 70px; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-dim); letter-spacing: .04em; }
+footer b { color: var(--accent); }
+
+/* tooltip */
+#tip { position: fixed; pointer-events: none; opacity: 0; transition: opacity .12s; background: var(--ink); color: var(--bg); font-family: "IBM Plex Mono", monospace; font-size: 11.5px; padding: 7px 10px; border-radius: 4px; z-index: 50; max-width: 240px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div id="tip"></div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="kicker">
+      <span>The Ill Collective · <b>@theillcollective</b></span>
+      <span>Reach teardown · 55 posts ≥ 1K</span>
+    </div>
+    <h1 class="title">Blood<br>Orange<br><span class="o">Teardown</span></h1>
+    <p class="dek">A forensic read of what your words actually do to your reach — every number below is from your own 55 top posts, not best-practice folklore.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">625<span class="u">K</span></div><div class="l">Total views</div></div>
+      <div class="stat"><div class="n">224<span class="u">K</span></div><div class="l">Best post</div></div>
+      <div class="stat"><div class="n">11.4<span class="u">K</span></div><div class="l">Average</div></div>
+      <div class="stat"><div class="n">3.3<span class="u">K</span></div><div class="l">Median</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="concentration">
+    <p class="eyebrow">01 — The shape of your reach</p>
+    <h2 class="section">One post is a third of everything</h2>
+    <p class="lede">Your reach isn't spread evenly — it's <strong>hit-driven</strong>. A single video ("i don't think donald is going to like my new single…") pulled <strong>224K</strong>, which is <strong>35.8%</strong> of all the views across these 55 posts. Your top 10 hold <strong>75.7%</strong>. The gap between your average (11.4K) and your median (3.3K) says the same thing: most posts land modestly, and a few break the roof.</p>
+    <figure>
+      <div class="chart" id="concentrationChart"></div>
+      <figcaption><span class="t">Share of total views</span><span>Top 1 / 5 / 10 posts vs. the other 45</span></figcaption>
+    </figure>
+    <p>That's not a flaw — it's the game on TikTok. It means the goal isn't a higher floor, it's <strong>more swings at the ceiling</strong>. Everything below is about which swings connect.</p>
+  </section>
+
+  <section id="engine">
+    <p class="eyebrow">02 — The reach engine</p>
+    <h2 class="section">Your angle matters more than your song</h2>
+    <p>Grouping every post by the <em>angle</em> of its hook, one pattern dominates: the closer a post gets to a <strong>topical, comment-baiting claim</strong>, the higher it flies. Bars in <span style="color:var(--accent)">orange</span> beat your 11.4K average; <span style="color:var(--drag)">grey</span> falls below it.</p>
+    <figure>
+      <div class="chart bar-row" id="themeChart"></div>
+      <div class="baseline-note"><span class="swatch"></span> dashed line = your 11.4K average · n = posts in group</div>
+      <figcaption><span class="t">Avg views by hook angle</span><span>Small groups (n&lt;5) are directional, not gospel</span></figcaption>
+    </figure>
+    <p>The <strong>"where are you from?"</strong> geo-bait tops the list — all three uses landed (median 34K, higher than the mean). The <strong>underdog / small-artist</strong> angle, your most-used at 11 posts, sits dead last at 4.3K. You lean on it most and it pays least.</p>
+  </section>
+
+  <section id="rules">
+    <p class="eyebrow">03 — Five rules your data actually proves</p>
+    <h2 class="section">How you write the line</h2>
+    <p>Same account, same music — the <em>construction</em> of the sentence swings reach by multiples. These five hold up across the set.</p>
+    <div class="rules" id="ruleCards"></div>
+  </section>
+
+  <section id="tags">
+    <p class="eyebrow">04 — Hashtags, ranked by what they returned</p>
+    <h2 class="section">Topical tags out-pull music tags</h2>
+    <p>Average views for every hashtag you've used at least three times. The news-cycle tags (<span class="mono">#epsteinfiles</span>, <span class="mono">#trump</span>, <span class="mono">#iran</span>) and <span class="mono">#singersongwriter</span> beat your average; the generic music tags you reach for by habit — <span class="mono">#newmusic</span>, <span class="mono">#indiemusic</span>, <span class="mono">#nzmusic</span> — quietly sit below it.</p>
+    <figure>
+      <div class="chart bar-row" id="tagChart"></div>
+      <div class="baseline-note"><span class="swatch"></span> dashed line = your 11.4K average</div>
+      <figcaption><span class="t">Avg views per hashtag</span><span>Tags used ≥ 3 times · number = uses</span></figcaption>
+    </figure>
+    <p class="caveat"><strong>Read this carefully:</strong> a hashtag doesn't <em>cause</em> views — the topical tags ride on the topical posts that were always going to travel. The tag is a marker of the angle, not a magic word. Don't bolt <span class="mono">#epsteinfiles</span> onto a love song.</p>
+  </section>
+
+  <section id="kill">
+    <p class="eyebrow">05 — What quietly kills reach</p>
+    <h2 class="section">Stop feeding these</h2>
+    <div class="kill">
+      <div class="item"><div class="n">6.2<span class="u">K</span></div><div class="d"><b>"POV:" overlays.</b> Your 11 POV-opener posts average 6.2K — below your baseline. The format is overused and underperforming; your real winners open first-person and plain ("i'm convinced…", "i don't think…"), not as a staged POV.</div></div>
+      <div class="item"><div class="n">3.2<span class="u">K</span></div><div class="d"><b>Reply-to-comment videos.</b> Great for community, weak for reach — they cluster near the bottom. Use them to reward fans, never as your push for a new song.</div></div>
+      <div class="item"><div class="n">2.7<span class="u">K</span></div><div class="d"><b>Lyric / karaoke videos with no spoken hook.</b> Lowest format in the set. If you post one, still stamp a text hook over the first second before the lyrics roll.</div></div>
+      <div class="item"><div class="n">4.2<span class="u">K</span></div><div class="d"><b>Sentence-case, "announcement" phrasing.</b> Hooks that start with a capital and read like marketing average 4.2K vs 19.1K for your lowercase, confessional lines. The polish is the problem.</div></div>
+    </div>
+  </section>
+
+  <section id="formula">
+    <p class="eyebrow">06 — The synthesis</p>
+    <h2 class="section">Build your next hook</h2>
+    <p>Every winning element above, stacked into one repeatable recipe. Not every post can be political — but every post can borrow the <em>construction</em>.</p>
+    <div class="formula">
+      <ol>
+        <li><div><b>Lead first-person and lowercase.</b><span>"i'm convinced…", "i don't think…", "pretty sure i've just…". The raw voice out-pulls the capitalised pitch 4-to-1.</span></div></li>
+        <li><div><b>Make a claim, not an announcement.</b><span>A suppression angle ("tiktok keeps pulling this down") or a geo-claim ("only showing my music to NZ") beats "out now" every time.</span></div></li>
+        <li><div><b>End on a question.</b><span>"where are you from?" — a comment-bait question nearly doubles average views and lifts the median 5×.</span></div></li>
+        <li><div><b>Keep it 7–12 words.</b><span>Your sharpest bucket. Long enough to carry the claim, short enough to read in a second.</span></div></li>
+        <li><div><b>Tag the angle, not the genre.</b><span>Topical + <span class="mono">#singersongwriter</span> over a pile of generic music tags.</span></div></li>
+      </ol>
+      <div class="recipe">
+        <span class="h">i'm convinced tiktok keeps burying this song about [topic]. where are you listening from?</span><br>
+        <span style="color:var(--ink-dim)">caption:</span> the reason i wrote it → <span class="tag">#singersongwriter #theillcollective #[topical]</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="method" style="border-bottom:none;">
+    <p class="eyebrow">07 — Method &amp; honest caveats</p>
+    <h2 class="section">Read this before you over-trust it</h2>
+    <p class="caveat"><strong>Sample:</strong> your 55 posts that cleared 1,000 views (the copy-bible set), scored on view count, hook, and caption. <strong>No dates or engagement</strong> were available, so this can't yet answer "best this week" or engagement rate — a TikTok Studio export unlocks both. <strong>Small groups</strong> (censorship framing n=5, geo-bait n=3) show the ceiling clearly but are thin — treat them as strong priors to test, not laws. And view count is also moved by posting time, the audio you used, and the algorithm's mood that day, none of which are in this data. The right use of this page is a <strong>hypothesis list</strong>: keep making the confessional, topical, question-ended swings, and watch whether the pattern holds as the sample grows.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    Blood Orange Teardown · built from <b>@theillcollective</b>'s own top-post data · a companion to the Signal dashboard.
+  </div>
+</footer>
+
+<script>
+const BASELINE = 11366;
+const fmt = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+"K" : String(Math.round(n));
+
+/* ---------- horizontal bar renderer ---------- */
+function renderBars(el, data, { max } = {}) {
+  const hi = max || Math.max(...data.map(d => d.value));
+  el.innerHTML = data.map(d => {
+    const w = Math.max(2, (d.value / hi) * 100);
+    const win = d.value >= BASELINE;
+    const basePct = (BASELINE / hi) * 100;
+    const inside = w > 22;
+    return `<div class="bar" data-tip="${d.tip||''}">
+      <div class="name">${d.name}${d.sub?` <span class="sub">${d.sub}</span>`:''}</div>
+      <div class="track">
+        <div class="baseline" style="position:absolute;left:${basePct}%;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink-dim);opacity:.6"></div>
+        <div class="fill ${win?'win':'drag'}" style="width:0" data-w="${w}"></div>
+        <div class="val" style="left:${inside? 'auto':`calc(${w}% + 8px)`};right:${inside?`calc(100% - ${w}% + 8px)`:'auto'};color:${inside?'var(--bg)':'var(--ink)'}">${fmt(d.value)}</div>
+      </div>
+    </div>`;
+  }).join("");
+  // animate widths in
+  requestAnimationFrame(() => el.querySelectorAll('.fill').forEach(f => { f.style.width = f.dataset.w + '%'; }));
+}
+
+/* ---------- concentration bar (single stacked row) ---------- */
+function renderConcentration(el) {
+  const segs = [
+    { label: "Top post", pct: 35.8, cls: "win" },
+    { label: "Posts 2–5", pct: 23.7, cls: "win2" },
+    { label: "Posts 6–10", pct: 16.2, cls: "win3" },
+    { label: "The other 45", pct: 24.3, cls: "drag" },
+  ];
+  el.innerHTML = `
+    <div style="display:flex;height:52px;border-radius:5px;overflow:hidden;gap:2px;background:var(--track)">
+      ${segs.map(s => `<div data-tip="${s.label}: ${s.pct}% of all views" title="${s.label}"
+        style="width:${s.pct}%;background:${s.cls==='win'?'var(--accent)':s.cls==='win2'?'color-mix(in srgb,var(--accent) 72%,var(--track))':s.cls==='win3'?'color-mix(in srgb,var(--accent) 44%,var(--track))':'var(--drag)'};
+        display:flex;align-items:center;justify-content:center;min-width:2px;cursor:default"></div>`).join("")}
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-dim);flex-wrap:wrap;gap:8px">
+      ${segs.map(s => `<span><b style="color:var(--ink)">${s.pct}%</b> ${s.label}</span>`).join("")}
+    </div>`;
+}
+
+/* ---------- data ---------- */
+renderConcentration(document.getElementById('concentrationChart'));
+
+renderBars(document.getElementById('themeChart'), [
+  { name: '"Where are you from?"', sub: 'n3', value: 26010, tip: 'Geo-limit bait · 3 posts · all landed (median 34K)' },
+  { name: 'Political / censorship', sub: 'n27', value: 13791, tip: 'Topical protest angle · 27 posts · highest ceiling' },
+  { name: 'Release / listen ask', sub: 'n4', value: 12418, tip: 'Direct "take a listen" · 4 posts' },
+  { name: 'Other', sub: 'n6', value: 8633, tip: 'Uncategorised · 6 posts' },
+  { name: 'Vulnerability', sub: 'n4', value: 6452, tip: 'Grief / depression / fatherhood · 4 posts' },
+  { name: 'Underdog / small artist', sub: 'n11', value: 4314, tip: 'Most-used angle, lowest return · 11 posts' },
+]);
+
+renderBars(document.getElementById('tagChart'), [
+  { name: '#epsteinfiles', sub: '15×', value: 19153 },
+  { name: '#singersongwriter', sub: '24×', value: 18988 },
+  { name: '#indiemusician', sub: '8×', value: 16166 },
+  { name: '#iran', sub: '24×', value: 14481 },
+  { name: '#trump', sub: '26×', value: 14219 },
+  { name: '#theillcollective', sub: '24×', value: 10550 },
+  { name: '#newmusicalert', sub: '9×', value: 10387 },
+  { name: '#nzmusic', sub: '12×', value: 8991 },
+  { name: '#indiemusic', sub: '20×', value: 8744 },
+  { name: '#newmusic', sub: '18×', value: 8670 },
+  { name: '#upandcomingartist', sub: '12×', value: 7493 },
+]);
+
+/* ---------- rule cards ---------- */
+const rules = [
+  {
+    big: '1.9<span class="x">×</span>',
+    h: 'End on a question',
+    p: 'Hooks with a <strong>question mark</strong> average 19.5K vs 10.5K without — and the median jumps from 3.2K to 18K. A question is a comment-bait CTA disguised as curiosity.',
+    q: 'i\'m convinced tiktok is only showing my music to New Zealand. <span class="m">Where are you from?</span> — 43K',
+  },
+  {
+    big: '4.6<span class="x">×</span>',
+    h: 'Write it lowercase',
+    p: 'Hooks that <strong>start lowercase</strong> average 19.1K; ones that start with a capital average 4.2K. The unpolished, texted-to-a-friend voice is the hook — smoothing it into marketing copy costs you reach.',
+    q: '<span class="m">i don\'t think donald</span> is going to like my new single… — 224K',
+  },
+  {
+    big: '4.7<span class="x">×</span>',
+    h: 'Frame it as suppressed',
+    p: 'The five posts that framed the song as <strong>censored</strong> — banned, pulled down, silenced — average 53K (median 11K), nearly 5× your baseline. "You\'re not supposed to see this" is your single strongest device.',
+    q: 'POV: Tiktok keeps <span class="m">pulling down</span> your new single about TR-MP — 11K',
+  },
+  {
+    big: '3.2<span class="x">×</span>',
+    h: 'Open in the first person',
+    p: 'Hooks that open with <strong>"I"</strong> average 36.6K (median 5.2K), well above baseline. Confessional beats staged — "i\'m convinced", "i wrote this", "i don\'t think" outrun any "POV:".',
+    q: '<span class="m">i\'m convinced</span> tiktok only shows my music to people in New Zealand — 34K',
+  },
+  {
+    big: '7–12',
+    h: 'Land it in 7–12 words',
+    p: 'Your sharpest length bucket averages <strong>17.4K</strong> — beating both terse 6-word hooks (8.6K) and rambling 21-word+ ones (7.6K). Long enough to carry a claim, short enough to read in a beat.',
+    q: 'someone should write a protest song about donald: — 20K <span style="color:var(--ink-dim)">(8 words)</span>',
+  },
+];
+document.getElementById('ruleCards').innerHTML = rules.map(r => `
+  <div class="rule">
+    <div class="big">${r.big}</div>
+    <div>
+      <h3>${r.h}</h3>
+      <p>${r.p}</p>
+      <div class="quote">${r.q}</div>
+    </div>
+  </div>`).join("");
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById('tip');
+function bindTips() {
+  document.querySelectorAll('[data-tip]').forEach(el => {
+    const t = el.getAttribute('data-tip'); if (!t) return;
+    el.addEventListener('mousemove', e => {
+      tip.textContent = t; tip.style.opacity = 1;
+      const x = Math.min(e.clientX + 14, window.innerWidth - 250);
+      tip.style.left = x + 'px'; tip.style.top = (e.clientY + 16) + 'px';
+    });
+    el.addEventListener('mouseleave', () => { tip.style.opacity = 0; });
+  });
+}
+bindTips();
+</script>
+</body>
+</html>
