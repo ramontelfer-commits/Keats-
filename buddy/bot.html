@@ -5,7 +5,7 @@
 <div id="root"></div>
 
 <script id="state" type="application/json">
-{"budget":2000,"txns":[{"id":"j98v5mk","amount":5,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"},{"id":"v1tgbld","amount":30,"type":"expense","cat":"food","note":"coffee","date":"2026-08-25","who":"ramon"},{"id":"7zmmv8z","amount":20,"type":"expense","cat":"food","note":"hello","date":"2026-08-25","who":"ramon"},{"id":"8qdz5ky","amount":15,"type":"expense","cat":"transport","note":"","date":"2026-08-25","who":"ramon"},{"id":"e3aw6ug","amount":20,"type":"expense","cat":"grocery","note":"","date":"2026-08-25","who":"ramon"}],"recurring":[{"id":"2hwott6","name":"Income","amount":3090,"type":"income","cat":"income","cycle":"fortnightly","next":"2026-08-27","who":"ramon"}],"upcoming":[]}
+{"budget":2000,"txns":[{"id":"j98v5mk","amount":5,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"},{"id":"v1tgbld","amount":30,"type":"expense","cat":"food","note":"coffee","date":"2026-08-25","who":"ramon"},{"id":"7zmmv8z","amount":20,"type":"expense","cat":"food","note":"hello","date":"2026-08-25","who":"ramon"},{"id":"8qdz5ky","amount":15,"type":"expense","cat":"transport","note":"","date":"2026-08-25","who":"ramon"},{"id":"e3aw6ug","amount":20,"type":"expense","cat":"grocery","note":"","date":"2026-08-25","who":"ramon"},{"id":"ffct0uc","amount":50,"type":"expense","cat":"food","note":"yy","date":"2026-08-25","who":"ramon"}],"recurring":[{"id":"2hwott6","name":"Income","amount":3090,"type":"income","cat":"income","cycle":"fortnightly","next":"2026-08-27","who":"ramon"}],"upcoming":[]}
 </script>
 
 <script id="main">
@@ -28,6 +28,16 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .head{padding:14px 2px 8px}
 .head-sub{font-size:15px;color:var(--text-2);font-weight:600}
 .head-title{font-size:34px;font-weight:800;letter-spacing:-.03em;margin:2px 0 0}
+.pnav{position:relative;display:flex;align-items:center;gap:6px;margin:2px 0 0}
+.pnav-arrow{flex:none;width:34px;height:34px;border:none;border-radius:50%;background:var(--card-2);color:var(--text);font-size:22px;line-height:1;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;transition:background .12s,transform .1s;font-family:inherit}
+.pnav-arrow:active{background:var(--accent-fade);transform:scale(.92)}
+.pnav-label{flex:1;min-width:0;text-align:left;background:none;border:none;padding:0 2px;cursor:pointer;font-family:inherit;color:var(--text);display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent}
+.pnav-title{font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.pnav-range{font-size:13px;font-weight:600;color:var(--text-2);margin-top:1px}
+.pnav-label:active .pnav-range{color:var(--accent)}
+.pnav-date{position:absolute;left:40px;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.pnav-now{margin:8px 2px 0;border:none;background:var(--accent-fade);color:var(--accent);font-size:13px;font-weight:700;padding:6px 13px;border-radius:20px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.pnav-now:active{filter:brightness(.96)}
 .ro-note{font-size:12px;color:var(--text-2);background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:10px;padding:8px 12px;margin:0 2px 12px;box-shadow:var(--shadow)}
 .settings-hint{font-size:12.5px;color:var(--text-2);text-align:center;padding:16px 12px 0}
 .cat-erow{gap:12px}
@@ -350,19 +360,40 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function fmtDM(d) { return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }); }
   // The pay cycle window (default fortnightly, anchored to the user's last payday).
   var DEFAULT_ANCHOR = "2026-01-02";
+  var periodOffset = 0; // 0 = current cycle, negative = past, positive = future (session-only)
   function payCycle() { return state.payCycle || "fortnightly"; }
+  function ymd(d) { var m = d.getMonth() + 1, day = d.getDate(); return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day; }
   function periodWindow() {
     var today = parseDate(todayStr()), cyc = payCycle();
     if (cyc === "monthly") {
-      var s = new Date(today.getFullYear(), today.getMonth(), 1);
-      var e = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-      return { start: s, end: e, label: s.toLocaleDateString(undefined, { month: "long" }) };
+      var s = new Date(today.getFullYear(), today.getMonth() + periodOffset, 1);
+      var e = new Date(today.getFullYear(), today.getMonth() + periodOffset + 1, 1);
+      var mlabel = s.toLocaleDateString(undefined, s.getFullYear() === today.getFullYear() ? { month: "long" } : { month: "long", year: "numeric" });
+      return { start: s, end: e, label: mlabel };
     }
     var days = cyc === "weekly" ? 7 : 14;
     var anchor = parseDate(state.payAnchor || DEFAULT_ANCHOR);
-    var k = Math.floor((today - anchor) / 86400000 / days);
+    var k = Math.floor((today - anchor) / 86400000 / days) + periodOffset;
     var s2 = addDays(anchor, k * days), e2 = addDays(s2, days);
     return { start: s2, end: e2, label: fmtDM(s2) + " – " + fmtDM(addDays(e2, -1)) };
+  }
+  // Title reflecting how far the shown period is from now.
+  function periodTitle(cw) {
+    if (periodOffset === 0) return "This " + cw;
+    if (periodOffset === -1) return "Last " + cw;
+    if (periodOffset === 1) return "Next " + cw;
+    return periodOffset < 0 ? Math.abs(periodOffset) + " " + cw + "s ago" : "In " + periodOffset + " " + cw + "s";
+  }
+  // Jump the shown period to whichever cycle contains a chosen date.
+  function goToDate(dateStr) {
+    var cyc = payCycle(), target = parseDate(dateStr), today = parseDate(todayStr());
+    if (cyc === "monthly") {
+      periodOffset = (target.getFullYear() - today.getFullYear()) * 12 + (target.getMonth() - today.getMonth());
+    } else {
+      var days = cyc === "weekly" ? 7 : 14, anchor = parseDate(state.payAnchor || DEFAULT_ANCHOR);
+      periodOffset = Math.floor((target - anchor) / 86400000 / days) - Math.floor((today - anchor) / 86400000 / days);
+    }
+    render();
   }
   function inPeriod(dateStr, w) { var d = parseDate(dateStr); return d >= w.start && d < w.end; }
   function cycleWord() { var c = payCycle(); return c === "weekly" ? "week" : c === "monthly" ? "month" : "fortnight"; }
@@ -415,7 +446,19 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var usePct = earned > 0 ? Math.min(100, spent / earned * 100) : (spent > 0 ? 100 : 0);
 
     var cw = cycleWord();
-    var html = '<div class="head"><div class="head-sub">Bank of Telfer · ' + esc(w.label) + '</div><h1 class="head-title">This ' + cw + '</h1></div>';
+    var atNow = periodOffset === 0;
+    var html = '<div class="head"><div class="head-sub">Bank of Telfer</div>' +
+      '<div class="pnav">' +
+        '<button class="pnav-arrow" id="pn-prev" aria-label="Previous ' + cw + '">‹</button>' +
+        '<button class="pnav-label" id="pn-label">' +
+          '<span class="pnav-title">' + periodTitle(cw) + '</span>' +
+          '<span class="pnav-range">' + esc(w.label) + '</span>' +
+        '</button>' +
+        '<button class="pnav-arrow" id="pn-next" aria-label="Next ' + cw + '">›</button>' +
+        '<input type="date" id="pn-date" class="pnav-date" value="' + ymd(w.start) + '" aria-label="Pick a date" />' +
+      '</div>' +
+      (atNow ? '' : '<button class="pnav-now" id="pn-now">Back to now</button>') +
+      '</div>';
     if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to add transactions.</div>';
 
     // Hero: what you saved this pay cycle, with In / Out beneath.
@@ -440,9 +483,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     }
 
     html += '<div class="sec-head"><div class="sec-title">Recent</div></div>';
-    var sorted = state.txns.slice().sort(function (a, b) { return b.date < a.date ? -1 : b.date > a.date ? 1 : 0; });
+    var sorted = state.txns.filter(function (t) { return inPeriod(t.date, w); })
+      .sort(function (a, b) { return b.date < a.date ? -1 : b.date > a.date ? 1 : 0; });
     if (!sorted.length) {
-      html += emptyState("No transactions yet", "Tap + to add your first one.");
+      html += emptyState("Nothing this " + cw, atNow ? "Tap + to add a transaction." : "No transactions in this " + cw + ".");
     } else {
       var groups = {};
       sorted.forEach(function (t) { (groups[t.date] = groups[t.date] || []).push(t); });
@@ -452,6 +496,19 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     }
     viewEl.innerHTML = html;
     wireDeletes("[data-del]", function (id) { state.txns = state.txns.filter(function (t) { return t.id !== id; }); });
+
+    var prev = document.getElementById("pn-prev"), next = document.getElementById("pn-next"),
+        lab = document.getElementById("pn-label"), dpk = document.getElementById("pn-date"),
+        nowBtn = document.getElementById("pn-now");
+    if (prev) prev.addEventListener("click", function () { periodOffset--; render(); });
+    if (next) next.addEventListener("click", function () { periodOffset++; render(); });
+    if (nowBtn) nowBtn.addEventListener("click", function () { periodOffset = 0; render(); });
+    if (dpk) dpk.addEventListener("change", function () { if (dpk.value) goToDate(dpk.value); });
+    if (lab) lab.addEventListener("click", function () {
+      if (!dpk) return;
+      if (dpk.showPicker) { try { dpk.showPicker(); return; } catch (e) {} }
+      dpk.focus(); dpk.click();
+    });
   }
 
   function txnRow(t) {
@@ -835,8 +892,20 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setType(b.getAttribute("data-type")); }); });
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); }); });
     document.getElementById("keypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) pressKey(el.getAttribute("data-key")); });
+
+    // Swipe left/right on the overview to step through pay cycles.
+    var sx = 0, sy = 0, tracking = false;
+    viewEl.addEventListener("touchstart", function (e) {
+      if (current !== "home" || e.touches.length !== 1) { tracking = false; return; }
+      tracking = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    }, { passive: true });
+    viewEl.addEventListener("touchend", function (e) {
+      if (!tracking) return; tracking = false;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) { periodOffset += dx < 0 ? 1 : -1; render(); }
+    }, { passive: true });
     document.querySelectorAll(".tab").forEach(function (t) {
-      t.addEventListener("click", function () { current = t.getAttribute("data-view"); setActiveTab(current); render(); });
+      t.addEventListener("click", function () { current = t.getAttribute("data-view"); periodOffset = 0; setActiveTab(current); render(); });
     });
 
     buildCatGrid();
