@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <title>Buddy — Spending</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="phone">
+    <!-- Views render here -->
+    <main id="view" class="view"></main>
+
+    <!-- Floating add button -->
+    <button id="fab" class="fab" aria-label="Add transaction">+</button>
+
+    <!-- Tab bar -->
+    <nav class="tabbar">
+      <button class="tab active" data-view="home">
+        <span class="tab-ico">◎</span><span>Spending</span>
+      </button>
+      <button class="tab" data-view="recurring">
+        <span class="tab-ico">↻</span><span>Recurring</span>
+      </button>
+      <button class="tab" data-view="upcoming">
+        <span class="tab-ico">◔</span><span>Upcoming</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Add sheet -->
+  <div class="sheet-scrim hidden" id="scrim"></div>
+  <div class="sheet hidden" id="sheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <button class="link" id="sheet-cancel">Cancel</button>
+      <h2 id="sheet-title">New transaction</h2>
+      <button class="link strong" id="sheet-save">Add</button>
+    </div>
+
+    <div class="amount-wrap">
+      <span class="amount-sign" id="amount-sign">−</span>
+      <span class="amount-cur">$</span>
+      <input id="amount" class="amount" inputmode="decimal" placeholder="0" />
+    </div>
+
+    <div class="seg" id="type-seg">
+      <button class="seg-btn active" data-type="expense">Expense</button>
+      <button class="seg-btn" data-type="income">Income</button>
+    </div>
+
+    <label class="field-label">Category</label>
+    <div class="cat-grid" id="cat-grid"></div>
+
+    <div class="rows">
+      <label class="row">
+        <span>Note</span>
+        <input id="note" class="row-input" placeholder="Optional" maxlength="40" />
+      </label>
+      <label class="row">
+        <span>Date</span>
+        <input id="date" class="row-input" type="date" />
+      </label>
+      <label class="row" id="repeat-row">
+        <span>Repeat</span>
+        <select id="repeat" class="row-input">
+          <option value="">Never</option>
+          <option value="weekly">Weekly</option>
+          <option value="fortnightly">Fortnightly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
