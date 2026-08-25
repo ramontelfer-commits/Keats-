@@ -5,7 +5,7 @@
 <div id="root"></div>
 
 <script id="state" type="application/json">
-{"budget":2000,"txns":[{"id":"j98v5mk","amount":5,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"},{"id":"v1tgbld","amount":30,"type":"expense","cat":"food","note":"coffee","date":"2026-08-25","who":"ramon"},{"id":"7zmmv8z","amount":20,"type":"expense","cat":"food","note":"hello","date":"2026-08-25","who":"ramon"},{"id":"8qdz5ky","amount":15,"type":"expense","cat":"transport","note":"","date":"2026-08-25","who":"ramon"},{"id":"e3aw6ug","amount":20,"type":"expense","cat":"grocery","note":"","date":"2026-08-25","who":"ramon"},{"id":"ffct0uc","amount":50,"type":"expense","cat":"food","note":"yy","date":"2026-08-25","who":"ramon"}],"recurring":[{"id":"2hwott6","name":"Income","amount":3090,"type":"income","cat":"income","cycle":"fortnightly","next":"2026-08-27","who":"ramon"}],"upcoming":[]}
+{"budget":2000,"txns":[{"id":"j98v5mk","amount":5,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"},{"id":"v1tgbld","amount":30,"type":"expense","cat":"food","note":"coffee","date":"2026-08-25","who":"ramon"},{"id":"7zmmv8z","amount":20,"type":"expense","cat":"food","note":"hello","date":"2026-08-25","who":"ramon"},{"id":"8qdz5ky","amount":15,"type":"expense","cat":"transport","note":"","date":"2026-08-25","who":"ramon"},{"id":"e3aw6ug","amount":20,"type":"expense","cat":"grocery","note":"","date":"2026-08-25","who":"ramon"},{"id":"ffct0uc","amount":50,"type":"expense","cat":"food","note":"yy","date":"2026-08-25","who":"ramon"}],"recurring":[{"id":"2hwott6","name":"Income","amount":3090,"type":"income","cat":"income","cycle":"fortnightly","next":"2026-08-27","who":"ramon"}],"upcoming":[],"buckets":[{"id":"atveuje","name":"wedding","color":"#a986c0","target":0,"auto":500,"autoStart":"2026-08-14","moves":[]}]}
 </script>
 
 <script id="main">
@@ -187,6 +187,12 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
 .bkt-info{text-align:center;font-size:13.5px;color:var(--text-2);padding:0 0 6px}
 .bkt-info b{color:var(--text)}
 .cat-cname.shake,.row-input.shake{animation:shk .4s}
+.bkt-auto.reached{color:var(--income);background:rgba(79,154,128,.16)}
+#bmove-seg .seg-btn{padding:7px 4px;font-size:12.5px}
+.toast{position:fixed;left:50%;bottom:calc(84px + var(--safe-b));z-index:60;display:flex;align-items:center;gap:14px;padding:11px 12px 11px 18px;background:rgba(34,51,58,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:26px;box-shadow:0 12px 30px rgba(0,0,0,.28);color:#fff;font-size:14px;font-weight:600;max-width:calc(100% - 40px);transform:translateX(-50%) translateY(12px);opacity:0;transition:opacity .22s ease,transform .22s ease;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.toast-undo{border:none;background:none;color:#7ec6d6;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;padding:2px 8px;-webkit-tap-highlight-color:transparent}
+.toast-undo:active{opacity:.6}
 `;
 
   var svg = function (inner) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; };
@@ -271,9 +277,11 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         '<span id="bamount" class="amount ph">0</span>' +
       '</div>' +
       '<div class="seg hidden" id="bmove-seg">' +
-        '<button class="seg-btn active" data-move="add">Add money</button>' +
+        '<button class="seg-btn active" data-move="add">Add</button>' +
         '<button class="seg-btn" data-move="take">Take out</button>' +
+        '<button class="seg-btn" data-move="move" id="bmove-move">Move to…</button>' +
       '</div>' +
+      '<div class="cat-grid hidden" id="bmove-dest"></div>' +
       '<div class="rows">' +
         '<label class="row"><span>Name</span><input id="bname" class="row-input" placeholder="e.g. Holiday" maxlength="24" /></label>' +
         '<label class="row"><span>Goal</span><input id="btarget" class="row-input" inputmode="decimal" placeholder="Optional" /></label>' +
@@ -282,7 +290,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '</div>' +
       '<div class="keypad" id="bkeypad">' + KEYPAD + '</div>' +
       '<button class="sheet-del hidden" id="bsheet-delete">Delete bucket</button>' +
-    '</div>';
+    '</div>' +
+    '<div class="toast hidden" id="toast"><span id="toast-txt"></span><button class="toast-undo" id="toast-undo">Undo</button></div>';
 
   /* ---- Categories & people -------------------------------------------- */
   var DEFAULT_CATS = [
@@ -494,6 +503,32 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   }
   function totalSetAside(w) { return buckets().reduce(function (s, b) { return s + bucketSetAside(b, w); }, 0); }
   function totalSaved() { return buckets().reduce(function (s, b) { return s + bucketBalance(b); }, 0); }
+  function addCycles(d, n) { var c = payCycle(); return c === "monthly" ? new Date(d.getFullYear(), d.getMonth() + n, d.getDate()) : addDays(d, n * (c === "weekly" ? 7 : 14)); }
+  // Projected finish date for a bucket that has a goal and an auto amount.
+  function bucketEta(b) {
+    if (!(b.target > 0) || !(b.auto > 0)) return null;
+    var bal = bucketBalance(b); if (bal >= b.target) return null;
+    var n = Math.ceil((b.target - bal) / b.auto);
+    return addCycles(currentPayStart(), n);
+  }
+  function etaLabel(d) { return d.toLocaleDateString(undefined, { month: "short", year: "numeric" }); }
+
+  /* ---- Feedback: haptics + undo toast --------------------------------- */
+  function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 8); } catch (e) {} }
+  var undoSnap = null, toastTimer = null;
+  function showToast(msg) {
+    var t = document.getElementById("toast"); if (!t) return;
+    document.getElementById("toast-txt").textContent = msg;
+    t.classList.remove("hidden"); requestAnimationFrame(function () { t.classList.add("show"); });
+    clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 5000);
+  }
+  function hideToast() { var t = document.getElementById("toast"); if (t) { t.classList.remove("show"); setTimeout(function () { t.classList.add("hidden"); }, 250); } undoSnap = null; }
+  // Snapshot state, run a mutation, and offer a one-tap undo.
+  function withUndo(label, fn) {
+    undoSnap = JSON.parse(JSON.stringify(state));
+    fn(); haptic(12); render(); persist(); showToast(label);
+  }
+  function doUndo() { if (undoSnap) { state = undoSnap; undoSnap = null; render(); persist(); } hideToast(); }
 
   /* ---- Rendering ------------------------------------------------------ */
   var viewEl, current;
@@ -809,10 +844,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     viewEl.innerHTML = html;
     if (readOnly) { wireEdits(); return; }
     viewEl.querySelectorAll("[data-delr]").forEach(function (b) {
-      b.addEventListener("click", function (e) { e.stopPropagation(); var id = b.getAttribute("data-delr"); state.recurring = state.recurring.filter(function (x) { return x.id !== id; }); render(); persist(); });
+      b.addEventListener("click", function (e) { e.stopPropagation(); var id = b.getAttribute("data-delr"); withUndo("Deleted", function () { state.recurring = state.recurring.filter(function (x) { return x.id !== id; }); }); });
     });
     viewEl.querySelectorAll("[data-delu]").forEach(function (b) {
-      b.addEventListener("click", function (e) { e.stopPropagation(); var id = b.getAttribute("data-delu"); state.upcoming = state.upcoming.filter(function (x) { return x.id !== id; }); render(); persist(); });
+      b.addEventListener("click", function (e) { e.stopPropagation(); var id = b.getAttribute("data-delu"); withUndo("Deleted", function () { state.upcoming = state.upcoming.filter(function (x) { return x.id !== id; }); }); });
     });
     wireEdits();
   }
@@ -824,7 +859,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (readOnly) return;
     viewEl.querySelectorAll(sel).forEach(function (b) {
       var attr = b.getAttribute("data-del") || b.getAttribute("data-delr") || b.getAttribute("data-delu");
-      b.addEventListener("click", function (e) { e.stopPropagation(); fn(attr); render(); persist(); });
+      b.addEventListener("click", function (e) { e.stopPropagation(); withUndo("Deleted", function () { fn(attr); }); });
     });
     wireEdits();
   }
@@ -922,14 +957,17 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function deleteEditing() {
     if (!editing) return;
     var e = editing;
-    if (e.kind === "recurring") state.recurring = state.recurring.filter(function (x) { return x.id !== e.id; });
-    else if (e.kind === "upcoming") state.upcoming = state.upcoming.filter(function (x) { return x.id !== e.id; });
-    else state.txns = state.txns.filter(function (x) { return x.id !== e.id; });
-    closeSheet(); render(); persist();
+    closeSheet();
+    withUndo("Deleted", function () {
+      if (e.kind === "recurring") state.recurring = state.recurring.filter(function (x) { return x.id !== e.id; });
+      else if (e.kind === "upcoming") state.upcoming = state.upcoming.filter(function (x) { return x.id !== e.id; });
+      else state.txns = state.txns.filter(function (x) { return x.id !== e.id; });
+    });
   }
   function saveTxn() {
     var amt = parseFloat(amountStr);
     if (!amt || amt <= 0) { amountEl.classList.add("shake"); setTimeout(function () { amountEl.classList.remove("shake"); }, 400); return; }
+    haptic(12);
     var date = dateEl.value || todayStr(), note = noteEl.value.trim();
 
     if (editing) {
@@ -977,28 +1015,51 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   }
   function bucketCard(b) {
     var bal = bucketBalance(b), tgt = b.target > 0 ? b.target : 0;
+    var reached = tgt && bal >= tgt;
     var pct = tgt ? Math.min(100, bal / tgt * 100) : (bal > 0 ? 100 : 0);
-    var auto = b.auto > 0 ? '<span class="bkt-auto">+' + money0(b.auto) + '/payday</span>' : '';
-    var meta = tgt ? Math.round(bal / tgt * 100) + '% · ' + money0(bal) + ' of ' + money0(tgt) +
-        (bal < tgt ? ' · ' + money0(tgt - bal) + ' to go' : ' · done') : money0(bal) + ' saved';
+    var tag = reached ? '<span class="bkt-auto reached">Reached</span>'
+      : (b.auto > 0 ? '<span class="bkt-auto">+' + money0(b.auto) + '/payday</span>' : '');
+    var meta;
+    if (!tgt) meta = money0(bal) + ' saved';
+    else if (reached) meta = money0(bal) + ' of ' + money0(tgt) + ' · goal reached';
+    else {
+      var eta = bucketEta(b);
+      meta = Math.round(bal / tgt * 100) + '% · ' + money0(tgt - bal) + ' to go' + (eta ? ' · ≈ ' + etaLabel(eta) : '');
+    }
     return '<button class="bkt" data-bkt="' + b.id + '">' +
       '<div class="bkt-top"><span class="dot-c" style="background:' + b.color + '"></span>' +
-        '<span class="bkt-name">' + esc(b.name) + '</span>' + auto +
+        '<span class="bkt-name">' + esc(b.name) + '</span>' + tag +
         '<span class="bkt-amt">' + money0(bal) + '</span></div>' +
       '<div class="bkt-track"><i style="width:' + pct + '%;background:' + b.color + '"></i></div>' +
       '<div class="bkt-meta">' + meta + '</div></button>';
   }
 
   /* ---- Bucket sheet --------------------------------------------------- */
-  var bsheet, bAmountEl, bNameEl, bTargetEl, bAutoEl, bColorEl, editingBucket = null, bAmountStr = "", bMove = "add", bColor = PALETTE[0];
+  var bsheet, bAmountEl, bNameEl, bTargetEl, bAutoEl, bColorEl, editingBucket = null, bAmountStr = "", bMove = "add", bColor = PALETTE[0], bDest = null;
   function setBAmount(s) { bAmountStr = s || ""; bAmountEl.textContent = bAmountStr || "0"; bAmountEl.classList.toggle("ph", !bAmountStr); }
   function bAmountLabel() {
     var l = document.getElementById("bamount-label"); if (!l) return;
-    l.textContent = editingBucket ? (bMove === "take" ? "Take out" : "Add money") : "Opening amount (optional)";
+    l.textContent = !editingBucket ? "Opening amount (optional)"
+      : bMove === "take" ? "Take out" : bMove === "move" ? "Move to another bucket" : "Add money";
+  }
+  function buildDestPicker() {
+    var wrap = document.getElementById("bmove-dest");
+    var others = buckets().filter(function (x) { return x.id !== editingBucket; });
+    if (!others.length) { wrap.innerHTML = ''; bDest = null; return; }
+    if (!bDest || !others.some(function (x) { return x.id === bDest; })) bDest = others[0].id;
+    wrap.innerHTML = others.map(function (c) {
+      return '<button type="button" class="cat-pick' + (c.id === bDest ? ' active' : '') + '" data-dest="' + c.id + '">' +
+        '<span class="dot-c" style="background:' + c.color + '"></span><span>' + esc(c.name) + '</span></button>';
+    }).join("");
+    wrap.querySelectorAll("[data-dest]").forEach(function (bn) {
+      bn.addEventListener("click", function () { bDest = bn.getAttribute("data-dest"); buildDestPicker(); });
+    });
   }
   function setBMove(m) {
     bMove = m;
     document.querySelectorAll("#bmove-seg .seg-btn").forEach(function (x) { x.classList.toggle("active", x.getAttribute("data-move") === m); });
+    var dest = document.getElementById("bmove-dest");
+    if (m === "move") { buildDestPicker(); dest.classList.remove("hidden"); } else dest.classList.add("hidden");
     bAmountLabel();
   }
   function showBSheet() {
@@ -1015,10 +1076,13 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (readOnly) return;
     var b = id ? buckets().find(function (x) { return x.id === id; }) : null;
     editingBucket = b ? b.id : null;
-    setBAmount(""); setBMove("add");
+    bDest = null; setBAmount("");
     document.getElementById("bsheet-title").textContent = b ? b.name : "New bucket";
     document.getElementById("bsheet-delete").classList.toggle("hidden", !b);
     document.getElementById("bmove-seg").classList.toggle("hidden", !b);
+    // "Move to…" only makes sense when there's another bucket to move into.
+    document.getElementById("bmove-move").classList.toggle("hidden", !b || buckets().length < 2);
+    setBMove("add");
     var info = document.getElementById("bkt-info");
     if (b) { info.classList.remove("hidden"); info.innerHTML = 'Balance <b>' + money0(bucketBalance(b)) + '</b>' + (b.target > 0 ? ' · Goal ' + money0(b.target) : ''); }
     else info.classList.add("hidden");
@@ -1040,17 +1104,27 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (!b) { b = { id: uid(), name: name, color: bColor, target: target, auto: auto, autoStart: null, moves: [] }; buckets().push(b); }
     else { b.name = name; b.color = bColor; b.target = target; b.auto = auto; }
     if (auto > 0 && !b.autoStart) b.autoStart = ymd(currentPayStart());   // begin accruing from this payday
-    if (amt > 0) {
-      var sign = (editingBucket && bMove === "take") ? -1 : 1;
-      b.moves.push({ id: uid(), amount: sign * amt, date: todayStr(), who: pickedWho });
+    if (amt > 0 && editingBucket) {
+      if (bMove === "move") {
+        var dest = buckets().find(function (x) { return x.id === bDest; });
+        if (dest && dest.id !== b.id) {
+          b.moves.push({ id: uid(), amount: -amt, date: todayStr(), who: pickedWho });
+          dest.moves.push({ id: uid(), amount: amt, date: todayStr(), who: pickedWho });
+        }
+      } else {
+        b.moves.push({ id: uid(), amount: (bMove === "take" ? -amt : amt), date: todayStr(), who: pickedWho });
+      }
+    } else if (amt > 0) {
+      b.moves.push({ id: uid(), amount: amt, date: todayStr(), who: pickedWho });   // opening deposit
     }
+    haptic(12);
     current = "savings"; periodOffset = 0; setActiveTab("savings"); closeBSheet(); render(); persist();
   }
   function deleteBucket() {
     if (!editingBucket) return;
     var id = editingBucket;
-    state.buckets = buckets().filter(function (x) { return x.id !== id; });
-    closeBSheet(); render(); persist();
+    closeBSheet();
+    withUndo("Bucket deleted", function () { state.buckets = buckets().filter(function (x) { return x.id !== id; }); });
   }
 
   /* ---- Boot ----------------------------------------------------------- */
@@ -1085,13 +1159,14 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     document.getElementById("bsheet-cancel").addEventListener("click", closeBSheet);
     document.getElementById("bsheet-save").addEventListener("click", saveBucket);
     document.getElementById("bsheet-delete").addEventListener("click", deleteBucket);
-    document.getElementById("bkeypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) setBAmount(applyKey(bAmountStr, el.getAttribute("data-key"))); });
+    document.getElementById("bkeypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) { haptic(6); setBAmount(applyKey(bAmountStr, el.getAttribute("data-key"))); } });
     document.querySelectorAll("#bmove-seg .seg-btn").forEach(function (x) { x.addEventListener("click", function () { setBMove(x.getAttribute("data-move")); }); });
     bColorEl.addEventListener("click", function () { var i = PALETTE.indexOf(bColor); bColor = PALETTE[(i + 1) % PALETTE.length]; bColorEl.style.background = bColor; });
+    document.getElementById("toast-undo").addEventListener("click", doUndo);
     scrim.addEventListener("click", function () { closeSheet(); closeBSheet(); });
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setType(b.getAttribute("data-type")); }); });
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); }); });
-    document.getElementById("keypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) pressKey(el.getAttribute("data-key")); });
+    document.getElementById("keypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) { haptic(6); pressKey(el.getAttribute("data-key")); } });
 
     // Swipe left/right on the overview to step through pay cycles.
     var sx = 0, sy = 0, tracking = false;
@@ -1105,7 +1180,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) { periodOffset += dx < 0 ? 1 : -1; render(); }
     }, { passive: true });
     document.querySelectorAll(".tab").forEach(function (t) {
-      t.addEventListener("click", function () { current = t.getAttribute("data-view"); periodOffset = 0; setActiveTab(current); render(); });
+      t.addEventListener("click", function () { haptic(5); current = t.getAttribute("data-view"); periodOffset = 0; setActiveTab(current); render(); });
     });
 
     buildCatGrid();
