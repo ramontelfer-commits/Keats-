@@ -46,8 +46,10 @@ fetch, so nothing is blocked over `file://`.
   - Give it a **future date** → it becomes an **upcoming** cost.
 - **Recurring** — all your fixed costs with an estimated monthly total.
 - **Upcoming** — planned one-off future spends with a running total.
-- **Settings** — currency (defaults to **NZ$**), monthly budget, and the two
-  people's names. Changes sync to everyone sharing BOT.
+- **Settings** — currency (defaults to **NZ$**), monthly budget, the two
+  people's names, and **editable categories** (rename, change emoji, cycle
+  colour, add or delete; Income is kept so it always has a category). Changes
+  sync to everyone sharing BOT.
 - **Warnings** — over-budget alerts, "80% of budget used", costs due within 7
   days, and recurring bills due today/tomorrow.
 

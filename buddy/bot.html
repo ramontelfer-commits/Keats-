@@ -46,6 +46,15 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .head-title{font-size:34px;font-weight:800;letter-spacing:-.03em;margin:2px 0 0}
 .ro-note{font-size:12px;color:var(--text-2);background:var(--card);border-radius:10px;padding:8px 12px;margin:0 2px 12px;box-shadow:var(--shadow)}
 .settings-hint{font-size:12.5px;color:var(--text-2);text-align:center;padding:16px 12px 0}
+.cat-erow{gap:10px}
+.cat-swatch{flex:none;width:34px;height:34px;border-radius:10px;border:none;display:grid;place-items:center;font-size:17px;cursor:pointer}
+.cat-emoji{flex:none;width:44px;text-align:center;border:none;background:var(--card-2);border-radius:8px;padding:8px 0;font-size:16px;color:var(--text);font-family:inherit}
+.cat-cname{flex:1;min-width:0;border:none;background:none;outline:none;color:var(--text);font-size:15px;font-weight:500;font-family:inherit}
+.cat-del2{flex:none;border:none;background:none;color:var(--text-3);font-size:15px;cursor:pointer;padding:6px}
+.cat-del2:active{color:var(--spend)}
+.cat-lock{flex:none;font-size:12px;opacity:.5;padding:6px}
+.add-cat-btn{display:block;width:100%;margin-top:10px;border:1px dashed var(--sep);background:none;color:var(--accent);font-weight:600;font-size:14px;padding:12px;border-radius:var(--r-md);cursor:pointer;font-family:inherit}
+.add-cat-btn:active{background:var(--card-2)}
 .row>span{display:inline-flex;align-items:center;gap:7px}
 #set-cur.row-input{color:var(--accent);font-weight:600}
 .hero{background:var(--card);border-radius:var(--r-lg);padding:22px;box-shadow:var(--shadow);margin-bottom:16px;text-align:center}
@@ -192,7 +201,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     '</div>';
 
   /* ---- Categories & people -------------------------------------------- */
-  var CATS = [
+  var DEFAULT_CATS = [
     { id: "food",     name: "Food",      emoji: "🍜", color: "#ff9f0a" },
     { id: "grocery",  name: "Groceries", emoji: "🛒", color: "#30b757" },
     { id: "transport",name: "Transport", emoji: "🚌", color: "#0a84ff" },
@@ -205,7 +214,13 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     { id: "income",   name: "Income",    emoji: "💰", color: "#30b757" },
     { id: "other",    name: "Other",     emoji: "•",  color: "#8a8a8e" },
   ];
-  function cat(id) { return CATS.find(function (c) { return c.id === id; }) || CATS[CATS.length - 1]; }
+  // Palette for new categories (cycled by index / on tap).
+  var PALETTE = ["#ff9f0a","#30b757","#0a84ff","#a2845e","#bf5af2","#5e5ce6","#ff375f","#ff453a","#64d2ff","#ffd60a","#5ac8fa","#8a8a8e"];
+  // Categories live in shared state so edits sync; fall back to defaults until edited.
+  function allCats() { return (state.cats && state.cats.length) ? state.cats : DEFAULT_CATS; }
+  function ensureCats() { if (!state.cats || !state.cats.length) state.cats = DEFAULT_CATS.map(function (c) { return { id: c.id, name: c.name, emoji: c.emoji, color: c.color }; }); return state.cats; }
+  function cat(id) { var l = allCats(); return l.find(function (c) { return c.id === id; }) || l[l.length - 1] || DEFAULT_CATS[DEFAULT_CATS.length - 1]; }
+  function firstExpenseCat() { var c = allCats().find(function (x) { return x.id !== "income"; }); return c ? c.id : "other"; }
   var PEOPLE = [
     { id: "ramon", name: "Ramon", color: "#0a84ff" },
     { id: "sarah", name: "Sarah", color: "#ff375f" },
@@ -479,6 +494,20 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     html += '<label class="row"><span><i class="who-dot" style="background:' + person("sarah").color + '"></i> Person 2</span>' +
       '<input class="row-input" id="set-sarah" maxlength="14" value="' + esc(nameOf("sarah")) + '"' + d + ' /></label>';
     html += '</div>';
+
+    html += '<div class="sec-head"><div class="sec-title">Categories</div></div><div class="rows" id="cat-editor">';
+    html += allCats().map(function (c) {
+      var canDel = c.id !== "income" && allCats().length > 2;
+      return '<div class="row cat-erow" data-id="' + c.id + '">' +
+        '<button class="cat-swatch" data-swatch="' + c.id + '" style="background:' + tint(c.color, 0.16) + ';color:' + c.color + '" title="Change colour"' + d + '>' + esc(c.emoji) + '</button>' +
+        '<input class="cat-emoji" data-emoji="' + c.id + '" maxlength="2" value="' + esc(c.emoji) + '"' + d + ' />' +
+        '<input class="cat-cname" data-cname="' + c.id + '" maxlength="18" value="' + esc(c.name) + '"' + d + ' />' +
+        (canDel ? '<button class="cat-del2" data-catdel="' + c.id + '" title="Delete">✕</button>' : '<span class="cat-lock" title="Kept so income always has a category">🔒</span>') +
+        '</div>';
+    }).join("");
+    html += '</div>';
+    if (!readOnly) html += '<button class="add-cat-btn" id="add-cat">+ Add category</button>';
+
     html += '<div class="settings-hint">Changes apply to both of you and sync everywhere BOT is open.</div>';
 
     viewEl.innerHTML = html;
@@ -495,6 +524,25 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     rn.addEventListener("change", function () { commit(function () { state.names = state.names || {}; state.names.ramon = rn.value.trim() || "Ramon"; }); });
     var sn = document.getElementById("set-sarah");
     sn.addEventListener("change", function () { commit(function () { state.names = state.names || {}; state.names.sarah = sn.value.trim() || "Sarah"; }); });
+
+    // Editable categories
+    function eCat(id) { return ensureCats().find(function (x) { return x.id === id; }); }
+    viewEl.querySelectorAll("[data-emoji]").forEach(function (el) {
+      el.addEventListener("change", function () { commit(function () { var c = eCat(el.getAttribute("data-emoji")); if (c) c.emoji = el.value.trim() || "•"; }); });
+    });
+    viewEl.querySelectorAll("[data-cname]").forEach(function (el) {
+      el.addEventListener("change", function () { commit(function () { var c = eCat(el.getAttribute("data-cname")); if (c) c.name = el.value.trim() || "Category"; }); });
+    });
+    viewEl.querySelectorAll("[data-swatch]").forEach(function (el) {
+      el.addEventListener("click", function () { commit(function () { var c = eCat(el.getAttribute("data-swatch")); if (!c) return; var i = PALETTE.indexOf(c.color); c.color = PALETTE[(i + 1) % PALETTE.length]; }); });
+    });
+    viewEl.querySelectorAll("[data-catdel]").forEach(function (el) {
+      el.addEventListener("click", function () { var id = el.getAttribute("data-catdel"); commit(function () { state.cats = ensureCats().filter(function (x) { return x.id !== id; }); }); });
+    });
+    var addCat = document.getElementById("add-cat");
+    if (addCat) addCat.addEventListener("click", function () {
+      commit(function () { var list = ensureCats(); list.push({ id: uid(), name: "New category", emoji: "•", color: PALETTE[list.length % PALETTE.length] }); });
+    });
   }
 
   function emptyState(emoji, title, sub) {
@@ -513,7 +561,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   var pickedCat = "food", pickedType = "expense", pickedWho = "ramon";
 
   function buildCatGrid() {
-    catGrid.innerHTML = CATS.filter(function (c) { return c.id !== "income" || pickedType === "income"; }).map(function (c) {
+    catGrid.innerHTML = allCats().filter(function (c) { return c.id !== "income" || pickedType === "income"; }).map(function (c) {
       return '<button class="cat-pick' + (c.id === pickedCat ? ' active' : '') + '" data-cat="' + c.id + '">' +
         '<div class="cat-badge" style="background:' + tint(c.color, 0.16) + '">' + c.emoji + '</div><span>' + esc(c.name) + '</span></button>';
     }).join("");
@@ -526,7 +574,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-type") === type); });
     signEl.textContent = type === "income" ? "+" : "−";
     signEl.style.color = type === "income" ? "var(--income)" : "var(--spend)";
-    if (type === "income") pickedCat = "income"; else if (pickedCat === "income") pickedCat = "food";
+    if (type === "income") pickedCat = "income"; else if (pickedCat === "income") pickedCat = firstExpenseCat();
     buildCatGrid();
   }
   function setWho(id) {
@@ -536,7 +584,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   }
   function openSheet() {
     if (readOnly) return;
-    pickedCat = "food"; amountEl.value = ""; noteEl.value = ""; repeatEl.value = ""; dateEl.value = todayStr();
+    pickedCat = firstExpenseCat(); amountEl.value = ""; noteEl.value = ""; repeatEl.value = ""; dateEl.value = todayStr();
     var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
     setType("expense"); setWho(pickedWho);
     scrim.classList.remove("hidden"); sheet.classList.remove("hidden");
