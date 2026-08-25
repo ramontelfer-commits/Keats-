@@ -125,10 +125,11 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .who-seg .seg-btn[data-who=ramon] .who-dot{background:var(--who-ramon)}
 .who-seg .seg-btn[data-who=sarah] .who-dot{background:var(--who-sarah)}
 .field-label{font-size:11.5px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;padding:0 4px 6px;display:block}
-.cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
-.cat-pick{border:1.5px solid var(--glass-brd);background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-radius:13px;cursor:pointer;padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:var(--shadow)}
-.cat-pick .dot-c{width:13px;height:13px}
-.cat-pick span{font-size:9.5px;font-weight:600;color:var(--text-2);line-height:1.1;text-align:center}
+.cat-grid{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity}
+.cat-grid::-webkit-scrollbar{display:none}
+.cat-pick{flex:0 0 auto;width:70px;scroll-snap-align:start;border:1.5px solid var(--glass-brd);background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-radius:14px;cursor:pointer;padding:11px 4px;display:flex;flex-direction:column;align-items:center;gap:7px;box-shadow:var(--shadow)}
+.cat-pick .dot-c{width:15px;height:15px}
+.cat-pick span{font-size:10.5px;font-weight:600;color:var(--text-2);line-height:1.1;text-align:center;white-space:nowrap}
 .cat-pick.active{border-color:var(--accent)}
 .cat-pick.active span{color:var(--text)}
 .rows{background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow)}
@@ -579,6 +580,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     catGrid.querySelectorAll("[data-cat]").forEach(function (b) {
       b.addEventListener("click", function () { pickedCat = b.getAttribute("data-cat"); buildCatGrid(); });
     });
+    var active = catGrid.querySelector(".cat-pick.active");
+    if (active) catGrid.scrollLeft = Math.max(0, active.offsetLeft - 8);
   }
   function setType(type) {
     pickedType = type;
