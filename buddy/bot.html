@@ -5,7 +5,7 @@
 <div id="root"></div>
 
 <script id="state" type="application/json">
-{"budget":2000,"txns":[],"recurring":[],"upcoming":[]}
+{"budget":2000,"txns":[{"id":"j98v5mk","amount":5,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"}],"recurring":[{"id":"2hwott6","name":"Income","amount":3090,"type":"income","cat":"income","cycle":"fortnightly","next":"2026-08-27","who":"ramon"}],"upcoming":[]}
 </script>
 
 <script id="main">
@@ -337,6 +337,22 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   }
   function inPeriod(dateStr, w) { var d = parseDate(dateStr); return d >= w.start && d < w.end; }
   function cycleWord() { var c = payCycle(); return c === "weekly" ? "week" : c === "monthly" ? "month" : "fortnight"; }
+  // Dates a recurring item lands on inside a window (so pay/bills show on the overview at the right time).
+  function occurrencesInWindow(r, w) {
+    var out = [], base = parseDate(r.next);
+    if (r.cycle === "monthly") {
+      var dom = base.getDate();
+      for (var i = -1; i <= 2; i++) {
+        var cand = new Date(w.start.getFullYear(), w.start.getMonth() + i, dom);
+        if (cand >= w.start && cand < w.end) out.push(cand);
+      }
+      return out;
+    }
+    var step = r.cycle === "weekly" ? 7 : 14;
+    var k = Math.ceil((w.start - base) / 86400000 / step);
+    for (var d = addDays(base, k * step); d < w.end; d = addDays(d, step)) out.push(new Date(d));
+    return out;
+  }
 
   /* ---- Rendering ------------------------------------------------------ */
   var viewEl, current;
@@ -357,11 +373,23 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var incomes  = state.txns.filter(function (t) { return t.type === "income"  && inPeriod(t.date, w); });
     var spent = expenses.reduce(function (s, t) { return s + t.amount; }, 0);
     var earned = incomes.reduce(function (s, t) { return s + t.amount; }, 0);
-    var saved = earned - spent;
-    var usePct = earned > 0 ? Math.min(100, spent / earned * 100) : (spent > 0 ? 100 : 0);
 
+    // Recurring items scheduled inside this pay period count too.
     var byCat = {};
     expenses.forEach(function (t) { byCat[t.cat] = (byCat[t.cat] || 0) + t.amount; });
+    var scheduled = [];
+    state.recurring.forEach(function (r) {
+      occurrencesInWindow(r, w).forEach(function (d) {
+        var inc = rtype(r) === "income";
+        if (inc) earned += r.amount;
+        else { spent += r.amount; byCat[r.cat] = (byCat[r.cat] || 0) + r.amount; }
+        scheduled.push({ r: r, date: dstr(d), inc: inc });
+      });
+    });
+    scheduled.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+
+    var saved = earned - spent;
+    var usePct = earned > 0 ? Math.min(100, spent / earned * 100) : (spent > 0 ? 100 : 0);
     var cats = Object.keys(byCat).map(function (id) { return { c: cat(id), amt: byCat[id] }; }).sort(function (a, b) { return b.amt - a.amt; });
     var maxCat = cats.length ? cats[0].amt : 1;
 
@@ -387,6 +415,15 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (warns.length) {
       html += '<div class="warns">' + warns.map(function (w) {
         return '<div class="warn ' + w.tone + '"><div class="warn-txt">' + w.text + '</div></div>';
+      }).join("") + '</div>';
+    }
+
+    if (scheduled.length) {
+      html += '<div class="sec-head"><div class="sec-title">Scheduled this ' + cw + '</div></div><div class="list">' + scheduled.map(function (x) {
+        var c = cat(x.r.cat);
+        return '<div class="txn" data-edit="recurring:' + x.r.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(x.r.name) +
+          '</div><div class="txn-sub">' + relDate(x.date) + ' · repeats ' + cycleLabel(x.r.cycle).toLowerCase() + '</div></div>' +
+          '<div class="txn-amt ' + (x.inc ? 'income' : '') + '">' + (x.inc ? '+' : '−') + money(x.r.amount) + '</div></div>';
       }).join("") + '</div>';
     }
 
