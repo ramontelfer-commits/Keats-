@@ -1,6 +1,7 @@
 # BOT — Bank of Telfer
 
-A super-simple, iOS-style spending tracker for **two people** (Ramon & Sarah).
+A minimal, emoji-free, iOS-style spending tracker for **two people** (Ramon & Sarah).
+Categories are shown as coloured monogram tiles and the tab bar uses simple line icons.
 Stripped back and beautiful: add a transaction, say who paid, pick a category and
 date, and BOT handles the rest. Set costs to repeat, plan upcoming spends, see a
 per-person split with a settle-up, and get plain-language warnings when a budget

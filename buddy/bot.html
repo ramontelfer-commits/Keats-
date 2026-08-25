@@ -46,13 +46,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .head-title{font-size:34px;font-weight:800;letter-spacing:-.03em;margin:2px 0 0}
 .ro-note{font-size:12px;color:var(--text-2);background:var(--card);border-radius:10px;padding:8px 12px;margin:0 2px 12px;box-shadow:var(--shadow)}
 .settings-hint{font-size:12.5px;color:var(--text-2);text-align:center;padding:16px 12px 0}
-.cat-erow{gap:10px}
-.cat-swatch{flex:none;width:34px;height:34px;border-radius:10px;border:none;display:grid;place-items:center;font-size:17px;cursor:pointer}
-.cat-emoji{flex:none;width:44px;text-align:center;border:none;background:var(--card-2);border-radius:8px;padding:8px 0;font-size:16px;color:var(--text);font-family:inherit}
+.cat-erow{gap:12px}
+.cat-swatch{flex:none;width:30px;height:30px;border-radius:9px;border:none;display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;cursor:pointer}
 .cat-cname{flex:1;min-width:0;border:none;background:none;outline:none;color:var(--text);font-size:15px;font-weight:500;font-family:inherit}
 .cat-del2{flex:none;border:none;background:none;color:var(--text-3);font-size:15px;cursor:pointer;padding:6px}
 .cat-del2:active{color:var(--spend)}
-.cat-lock{flex:none;font-size:12px;opacity:.5;padding:6px}
 .add-cat-btn{display:block;width:100%;margin-top:10px;border:1px dashed var(--sep);background:none;color:var(--accent);font-weight:600;font-size:14px;padding:12px;border-radius:var(--r-md);cursor:pointer;font-family:inherit}
 .add-cat-btn:active{background:var(--card-2)}
 .row>span{display:inline-flex;align-items:center;gap:7px}
@@ -79,17 +77,16 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .who-tag{display:inline-flex;align-items:center;gap:4px}
 .who-tag i{width:7px;height:7px;border-radius:50%;display:inline-block}
 .warns{display:grid;gap:10px;margin-bottom:16px}
-.warn{display:flex;gap:12px;align-items:center;padding:13px 15px;border-radius:var(--r-md);background:var(--card);box-shadow:var(--shadow)}
-.warn-ico{font-size:20px;flex:none;width:24px;text-align:center}
+.warn{display:flex;gap:12px;align-items:center;padding:13px 15px 13px 14px;border-radius:var(--r-md);background:var(--card);box-shadow:var(--shadow);border-left:3px solid var(--text-3)}
 .warn-txt{font-size:13.5px;line-height:1.35}
 .warn-txt b{font-weight:700}
-.warn.alert{background:color-mix(in srgb,var(--spend) 12%,var(--card))}
-.warn.soft{background:color-mix(in srgb,#ff9f0a 14%,var(--card))}
+.warn.alert{border-left-color:var(--spend)}
+.warn.soft{border-left-color:#ff9f0a}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;padding:4px 4px 8px;margin-top:6px}
 .sec-title{font-size:20px;font-weight:800;letter-spacing:-.02em}
 .cats{display:grid;gap:2px;background:var(--card);border-radius:var(--r-md);padding:6px 4px;box-shadow:var(--shadow);margin-bottom:16px}
 .cat-line{display:flex;align-items:center;gap:12px;padding:10px 12px}
-.cat-badge{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
+.cat-badge{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;flex:none}
 .cat-name{font-weight:600;font-size:15px;flex:none}
 .cat-bar{flex:1;height:6px;border-radius:99px;background:var(--card-2);overflow:hidden}
 .cat-bar>i{display:block;height:100%;border-radius:99px}
@@ -97,7 +94,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .list{background:var(--card);border-radius:var(--r-md);box-shadow:var(--shadow);overflow:hidden}
 .txn{display:flex;align-items:center;gap:13px;padding:12px 15px;position:relative}
 .txn+.txn::before{content:"";position:absolute;top:0;left:62px;right:0;height:1px;background:var(--sep)}
-.txn-badge{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;flex:none}
+.txn-badge{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:16px;font-weight:700;color:#fff;flex:none}
 .txn-body{flex:1;min-width:0}
 .txn-name{font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .txn-sub{font-size:12.5px;color:var(--text-2);margin-top:1px}
@@ -108,14 +105,13 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .date-group{margin-bottom:16px}
 .date-label{font-size:12.5px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;padding:0 6px 7px}
 .empty{text-align:center;color:var(--text-2);padding:48px 20px}
-.empty-emoji{font-size:42px}
-.empty-title{font-weight:700;font-size:17px;margin:12px 0 4px}
+.empty-title{font-weight:700;font-size:17px;margin:0 0 4px}
 .empty-sub{font-size:14px}
 .fab{position:fixed;right:22px;bottom:calc(88px + var(--safe-b));z-index:30;width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;background:var(--accent);color:#fff;font-size:30px;font-weight:300;line-height:1;box-shadow:0 6px 20px rgba(10,132,255,.45);transition:transform .12s}
 .fab:active{transform:scale(.9)}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:440px;margin:0 auto;display:flex;padding:8px 8px calc(8px + var(--safe-b));background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--sep)}
 .tab{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text-2);font-size:10.5px;font-weight:600;padding:5px 0}
-.tab-ico{font-size:22px;line-height:1}
+.tab svg{width:25px;height:25px;display:block}
 .tab.active{color:var(--accent)}
 .sheet-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40;opacity:0;transition:opacity .25s}
 .sheet-scrim.show{opacity:1}
@@ -141,7 +137,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .field-label{font-size:12.5px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;padding:0 4px 8px;display:block}
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
 .cat-pick{border:1.5px solid transparent;background:var(--card);border-radius:14px;cursor:pointer;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:var(--shadow)}
-.cat-pick .cat-badge{width:40px;height:40px;border-radius:12px;font-size:20px}
+.cat-pick .cat-badge{width:40px;height:40px;border-radius:12px;font-size:17px}
 .cat-pick span{font-size:11px;font-weight:600;color:var(--text-2)}
 .cat-pick.active{border-color:var(--accent)}
 .cat-pick.active span{color:var(--text)}
@@ -155,15 +151,23 @@ select.row-input{appearance:none;-webkit-appearance:none;color:var(--accent);fon
 input[type=date].row-input{color:var(--accent);font-weight:600}
 `;
 
+  var svg = function (inner) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; };
+  var ICONS = {
+    home: svg('<line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="8"/><line x1="18" y1="20" x2="18" y2="11"/>'),
+    recurring: svg('<polyline points="17 2 21 6 17 10"/><path d="M3 12V10a4 4 0 0 1 4-4h14"/><polyline points="7 22 3 18 7 14"/><path d="M21 12v2a4 4 0 0 1-4 4H3"/>'),
+    upcoming: svg('<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/>'),
+    settings: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+  };
+
   var SHELL =
     '<div class="phone">' +
       '<main id="view" class="view"></main>' +
       '<button id="fab" class="fab" aria-label="Add transaction">+</button>' +
       '<nav class="tabbar">' +
-        '<button class="tab active" data-view="home"><span class="tab-ico">◎</span><span>Spending</span></button>' +
-        '<button class="tab" data-view="recurring"><span class="tab-ico">↻</span><span>Recurring</span></button>' +
-        '<button class="tab" data-view="upcoming"><span class="tab-ico">◔</span><span>Upcoming</span></button>' +
-        '<button class="tab" data-view="settings"><span class="tab-ico">⚙</span><span>Settings</span></button>' +
+        '<button class="tab active" data-view="home">' + ICONS.home + '<span>Spending</span></button>' +
+        '<button class="tab" data-view="recurring">' + ICONS.recurring + '<span>Recurring</span></button>' +
+        '<button class="tab" data-view="upcoming">' + ICONS.upcoming + '<span>Upcoming</span></button>' +
+        '<button class="tab" data-view="settings">' + ICONS.settings + '<span>Settings</span></button>' +
       '</nav>' +
     '</div>' +
     '<div class="sheet-scrim hidden" id="scrim"></div>' +
@@ -202,23 +206,24 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
 
   /* ---- Categories & people -------------------------------------------- */
   var DEFAULT_CATS = [
-    { id: "food",     name: "Food",      emoji: "🍜", color: "#ff9f0a" },
-    { id: "grocery",  name: "Groceries", emoji: "🛒", color: "#30b757" },
-    { id: "transport",name: "Transport", emoji: "🚌", color: "#0a84ff" },
-    { id: "coffee",   name: "Coffee",    emoji: "☕", color: "#a2845e" },
-    { id: "shopping", name: "Shopping",  emoji: "🛍️", color: "#bf5af2" },
-    { id: "bills",    name: "Bills",     emoji: "🧾", color: "#5e5ce6" },
-    { id: "fun",      name: "Fun",       emoji: "🎉", color: "#ff375f" },
-    { id: "health",   name: "Health",    emoji: "❤️", color: "#ff453a" },
-    { id: "home",     name: "Home",      emoji: "🏠", color: "#64d2ff" },
-    { id: "income",   name: "Income",    emoji: "💰", color: "#30b757" },
-    { id: "other",    name: "Other",     emoji: "•",  color: "#8a8a8e" },
+    { id: "food",     name: "Food",      color: "#ff9f0a" },
+    { id: "grocery",  name: "Groceries", color: "#30b757" },
+    { id: "transport",name: "Transport", color: "#0a84ff" },
+    { id: "coffee",   name: "Coffee",    color: "#a2845e" },
+    { id: "shopping", name: "Shopping",  color: "#bf5af2" },
+    { id: "bills",    name: "Bills",     color: "#5e5ce6" },
+    { id: "fun",      name: "Fun",       color: "#ff375f" },
+    { id: "health",   name: "Health",    color: "#ff453a" },
+    { id: "home",     name: "Home",      color: "#64d2ff" },
+    { id: "income",   name: "Income",    color: "#30b757" },
+    { id: "other",    name: "Other",     color: "#8a8a8e" },
   ];
+  function monogram(name) { return (String(name || "?").trim()[0] || "?").toUpperCase(); }
   // Palette for new categories (cycled by index / on tap).
   var PALETTE = ["#ff9f0a","#30b757","#0a84ff","#a2845e","#bf5af2","#5e5ce6","#ff375f","#ff453a","#64d2ff","#ffd60a","#5ac8fa","#8a8a8e"];
   // Categories live in shared state so edits sync; fall back to defaults until edited.
   function allCats() { return (state.cats && state.cats.length) ? state.cats : DEFAULT_CATS; }
-  function ensureCats() { if (!state.cats || !state.cats.length) state.cats = DEFAULT_CATS.map(function (c) { return { id: c.id, name: c.name, emoji: c.emoji, color: c.color }; }); return state.cats; }
+  function ensureCats() { if (!state.cats || !state.cats.length) state.cats = DEFAULT_CATS.map(function (c) { return { id: c.id, name: c.name, color: c.color }; }); return state.cats; }
   function cat(id) { var l = allCats(); return l.find(function (c) { return c.id === id; }) || l[l.length - 1] || DEFAULT_CATS[DEFAULT_CATS.length - 1]; }
   function firstExpenseCat() { var c = allCats().find(function (x) { return x.id !== "income"; }); return c ? c.id : "other"; }
   var PEOPLE = [
@@ -329,7 +334,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     else renderHome();
   }
 
-  function badge(c) { return '<div class="txn-badge" style="background:' + tint(c.color, 0.16) + '">' + c.emoji + "</div>"; }
+  function badge(c) { return '<div class="txn-badge" style="background:' + c.color + '">' + monogram(c.name) + "</div>"; }
   function avatar(p) { return '<div class="avatar" style="background:' + p.color + '">' + initial(p) + "</div>"; }
 
   function renderHome() {
@@ -349,7 +354,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var maxCat = cats.length ? cats[0].amt : 1;
 
     var html = '<div class="head"><div class="head-sub">Bank of Telfer · ' + month + '</div><h1 class="head-title">Spending</h1></div>';
-    if (readOnly) html += '<div class="ro-note">👁 View-only — ask the owner to share BOT with you as an editor to add transactions.</div>';
+    if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to add transactions.</div>';
 
     html += '<div class="hero"><div class="hero-label">Spent this month</div>' +
       '<div class="hero-amount">' + money0(whole) + '<span class="cents">.' + String(cents).padStart(2, "0") + '</span></div>' +
@@ -367,13 +372,13 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var warns = buildWarnings(spent, budget, pct);
     if (warns.length) {
       html += '<div class="warns">' + warns.map(function (w) {
-        return '<div class="warn ' + w.tone + '"><div class="warn-ico">' + w.ico + '</div><div class="warn-txt">' + w.text + '</div></div>';
+        return '<div class="warn ' + w.tone + '"><div class="warn-txt">' + w.text + '</div></div>';
       }).join("") + '</div>';
     }
 
     if (cats.length) {
       html += '<div class="sec-head"><div class="sec-title">Categories</div></div><div class="cats">' + cats.map(function (x) {
-        return '<div class="cat-line"><div class="cat-badge" style="background:' + tint(x.c.color, 0.16) + '">' + x.c.emoji + '</div>' +
+        return '<div class="cat-line"><div class="cat-badge" style="background:' + x.c.color + '">' + monogram(x.c.name) + '</div>' +
           '<div class="cat-name">' + esc(x.c.name) + '</div><div class="cat-bar"><i style="width:' + (x.amt / maxCat * 100) + '%;background:' + x.c.color + '"></i></div>' +
           '<div class="cat-amt">' + money(x.amt) + '</div></div>';
       }).join("") + '</div>';
@@ -382,7 +387,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     html += '<div class="sec-head"><div class="sec-title">Recent</div></div>';
     var sorted = state.txns.slice().sort(function (a, b) { return b.date < a.date ? -1 : b.date > a.date ? 1 : 0; });
     if (!sorted.length) {
-      html += emptyState("💸", "No transactions yet", "Tap + to add your first one.");
+      html += emptyState("No transactions yet", "Tap + to add your first one.");
     } else {
       var groups = {};
       sorted.forEach(function (t) { (groups[t.date] = groups[t.date] || []).push(t); });
@@ -413,7 +418,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '<div class="split-mid"></div>' +
       '<div class="split-person">' + avatar(b) + '<div class="split-amt">' + money0(bv) + '</div><div class="split-name">' + esc(b.name) + '</div></div></div>';
     var diff = Math.abs(av - bv);
-    if (diff < 0.5) html += '<div class="settle even">Even — you\'re square 👍</div>';
+    if (diff < 0.5) html += '<div class="settle even">All square</div>';
     else {
       var owes = av > bv ? b : a, owed = av > bv ? a : b;
       html += '<div class="settle"><b>' + esc(owes.name) + '</b> owes <b>' + esc(owed.name) + '</b> ' + money(diff / 2) + ' to even up</div>';
@@ -423,12 +428,12 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
 
   function buildWarnings(spent, budget, pct) {
     var w = [];
-    if (budget && spent > budget) w.push({ tone: "alert", ico: "🚨", text: "You're <b>" + money0(spent - budget) + " over</b> your " + money0(budget) + " budget this month." });
-    else if (budget && pct >= 80) w.push({ tone: "soft", ico: "⚠️", text: "You've used <b>" + Math.round(pct) + "%</b> of your monthly budget." });
+    if (budget && spent > budget) w.push({ tone: "alert", text: "You're <b>" + money0(spent - budget) + " over</b> your " + money0(budget) + " budget this month." });
+    else if (budget && pct >= 80) w.push({ tone: "soft", text: "You've used <b>" + Math.round(pct) + "%</b> of your monthly budget." });
     var soon = state.upcoming.filter(function (u) { var d = Math.round((parseDate(u.date) - parseDate(todayStr())) / 86400000); return d >= 0 && d <= 7; });
-    if (soon.length) { var total = soon.reduce(function (s, u) { return s + u.amount; }, 0); w.push({ tone: "soft", ico: "📅", text: "<b>" + money0(total) + "</b> in upcoming costs due within 7 days." }); }
+    if (soon.length) { var total = soon.reduce(function (s, u) { return s + u.amount; }, 0); w.push({ tone: "soft", text: "<b>" + money0(total) + "</b> in upcoming costs due within 7 days." }); }
     state.recurring.filter(function (r) { var d = Math.round((parseDate(r.next) - parseDate(todayStr())) / 86400000); return d >= 0 && d <= 1; })
-      .forEach(function (r) { w.push({ tone: "soft", ico: "↻", text: "<b>" + esc(r.name) + "</b> (" + money0(r.amount) + ") is due " + relDate(r.next).toLowerCase() + "." }); });
+      .forEach(function (r) { w.push({ tone: "soft", text: "<b>" + esc(r.name) + "</b> (" + money0(r.amount) + ") is due " + relDate(r.next).toLowerCase() + "." }); });
     return w;
   }
 
@@ -437,7 +442,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var html = '<div class="head"><div class="head-sub">Fixed costs</div><h1 class="head-title">Recurring</h1></div>';
     html += '<div class="hero"><div class="hero-label">Est. per month</div><div class="hero-amount">' + money0(monthly) + '</div>' +
       '<div class="hero-meta">' + state.recurring.length + ' recurring cost' + (state.recurring.length === 1 ? '' : 's') + '</div></div>';
-    if (!state.recurring.length) html += emptyState("↻", "No recurring costs", "Add one with + and set Repeat.");
+    if (!state.recurring.length) html += emptyState("No recurring costs", "Add one with + and set Repeat.");
     else {
       var sorted = state.recurring.slice().sort(function (a, b) { return a.next < b.next ? -1 : 1; });
       html += '<div class="list">' + sorted.map(function (r) {
@@ -458,7 +463,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var html = '<div class="head"><div class="head-sub">One-off future spends</div><h1 class="head-title">Upcoming</h1></div>';
     html += '<div class="hero"><div class="hero-label">Total upcoming</div><div class="hero-amount">' + money0(total) + '</div>' +
       '<div class="hero-meta">' + sorted.length + ' planned</div></div>';
-    if (!sorted.length) html += emptyState("📅", "Nothing upcoming", "Plan a future cost — add it with + and pick a date.");
+    if (!sorted.length) html += emptyState("Nothing upcoming", "Plan a future cost — add it with + and pick a date.");
     else {
       html += '<div class="list">' + sorted.map(function (u) {
         var c = cat(u.cat);
@@ -479,7 +484,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var d = readOnly ? " disabled" : "";
 
     var html = '<div class="head"><div class="head-sub">Bank of Telfer</div><h1 class="head-title">Settings</h1></div>';
-    if (readOnly) html += '<div class="ro-note">👁 View-only — ask the owner to share BOT with you as an editor to change settings.</div>';
+    if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to change settings.</div>';
 
     html += '<div class="sec-head"><div class="sec-title">Money</div></div><div class="rows">';
     html += '<label class="row"><span>Currency</span><select class="row-input" id="set-cur"' + d + '>' +
@@ -499,10 +504,9 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     html += allCats().map(function (c) {
       var canDel = c.id !== "income" && allCats().length > 2;
       return '<div class="row cat-erow" data-id="' + c.id + '">' +
-        '<button class="cat-swatch" data-swatch="' + c.id + '" style="background:' + tint(c.color, 0.16) + ';color:' + c.color + '" title="Change colour"' + d + '>' + esc(c.emoji) + '</button>' +
-        '<input class="cat-emoji" data-emoji="' + c.id + '" maxlength="2" value="' + esc(c.emoji) + '"' + d + ' />' +
+        '<button class="cat-swatch" data-swatch="' + c.id + '" style="background:' + c.color + '" title="Change colour"' + d + '>' + monogram(c.name) + '</button>' +
         '<input class="cat-cname" data-cname="' + c.id + '" maxlength="18" value="' + esc(c.name) + '"' + d + ' />' +
-        (canDel ? '<button class="cat-del2" data-catdel="' + c.id + '" title="Delete">✕</button>' : '<span class="cat-lock" title="Kept so income always has a category">🔒</span>') +
+        (canDel ? '<button class="cat-del2" data-catdel="' + c.id + '" title="Delete">✕</button>' : '') +
         '</div>';
     }).join("");
     html += '</div>';
@@ -527,9 +531,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
 
     // Editable categories
     function eCat(id) { return ensureCats().find(function (x) { return x.id === id; }); }
-    viewEl.querySelectorAll("[data-emoji]").forEach(function (el) {
-      el.addEventListener("change", function () { commit(function () { var c = eCat(el.getAttribute("data-emoji")); if (c) c.emoji = el.value.trim() || "•"; }); });
-    });
     viewEl.querySelectorAll("[data-cname]").forEach(function (el) {
       el.addEventListener("change", function () { commit(function () { var c = eCat(el.getAttribute("data-cname")); if (c) c.name = el.value.trim() || "Category"; }); });
     });
@@ -541,12 +542,12 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     });
     var addCat = document.getElementById("add-cat");
     if (addCat) addCat.addEventListener("click", function () {
-      commit(function () { var list = ensureCats(); list.push({ id: uid(), name: "New category", emoji: "•", color: PALETTE[list.length % PALETTE.length] }); });
+      commit(function () { var list = ensureCats(); list.push({ id: uid(), name: "New category", color: PALETTE[list.length % PALETTE.length] }); });
     });
   }
 
-  function emptyState(emoji, title, sub) {
-    return '<div class="empty"><div class="empty-emoji">' + emoji + '</div><div class="empty-title">' + esc(title) + '</div><div class="empty-sub">' + esc(sub) + '</div></div>';
+  function emptyState(title, sub) {
+    return '<div class="empty"><div class="empty-title">' + esc(title) + '</div><div class="empty-sub">' + esc(sub) + '</div></div>';
   }
   function wireDeletes(sel, fn) {
     if (readOnly) return;
@@ -563,7 +564,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function buildCatGrid() {
     catGrid.innerHTML = allCats().filter(function (c) { return c.id !== "income" || pickedType === "income"; }).map(function (c) {
       return '<button class="cat-pick' + (c.id === pickedCat ? ' active' : '') + '" data-cat="' + c.id + '">' +
-        '<div class="cat-badge" style="background:' + tint(c.color, 0.16) + '">' + c.emoji + '</div><span>' + esc(c.name) + '</span></button>';
+        '<div class="cat-badge" style="background:' + c.color + '">' + monogram(c.name) + '</div><span>' + esc(c.name) + '</span></button>';
     }).join("");
     catGrid.querySelectorAll("[data-cat]").forEach(function (b) {
       b.addEventListener("click", function () { pickedCat = b.getAttribute("data-cat"); buildCatGrid(); });
