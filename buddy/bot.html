@@ -223,7 +223,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         '<button class="tab active" data-view="home">' + ICONS.home + '<span>Spending</span></button>' +
         '<button class="tab" data-view="breakdown">' + ICONS.breakdown + '<span>Breakdown</span></button>' +
         '<button class="tab" data-view="planned">' + ICONS.planned + '<span>Planned</span></button>' +
-        '<button class="tab" data-view="savings">' + ICONS.savings + '<span>Savings</span></button>' +
+        '<button class="tab" data-view="savings">' + ICONS.savings + '<span>Saved</span></button>' +
         '<button class="tab" data-view="settings">' + ICONS.settings + '<span>Settings</span></button>' +
       '</nav>' +
     '</div>' +
@@ -957,7 +957,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var total = totalSaved();
     var goalTotal = list.reduce(function (s, b) { return s + (b.target > 0 ? b.target : 0); }, 0);
 
-    var html = '<div class="head"><div class="head-sub">Money set aside</div><h1 class="head-title">Savings</h1></div>';
+    var html = '<div class="head"><div class="head-sub">Money set aside</div><h1 class="head-title">Saved</h1></div>';
     if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to change savings.</div>';
 
     html += '<div class="hero"><div class="hero-label">Total saved</div><div class="hero-amount pos">' + money0(total) + '</div>' +
