@@ -5,12 +5,13 @@
 <div id="root"></div>
 
 <script id="state" type="application/json">
-{"budget":2000,"txns":[{"id":"dez4hno","amount":20,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"},{"id":"ejlc8ea","amount":300,"type":"income","cat":"income","note":"","date":"2026-08-25","who":"ramon"}],"recurring":[],"upcoming":[]}
+{"budget":2000,"txns":[],"recurring":[],"upcoming":[]}
 </script>
 
 <script id="main">
 (function () {
   "use strict";
+  /* Pay-cycle dashboard: income in, spending out, saved this fortnight. v2 */
 
   /* ---- Styling (injected at runtime + embedded on republish) ---------- */
   var CSS = `
@@ -42,6 +43,14 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .hero-label{font-size:13px;color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .hero-amount{font-size:44px;font-weight:800;letter-spacing:-.04em;margin:6px 0 2px}
 .hero-amount .cents{font-size:26px;color:var(--text-2);font-weight:700}
+.hero-amount.pos{color:var(--income)}
+.hero-amount.neg{color:var(--spend)}
+.flow{display:flex;align-items:stretch;justify-content:center;margin:12px 0 6px}
+.flow-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 6px}
+.flow-k{font-size:11.5px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em}
+.flow-v{font-size:21px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.flow-v.pos{color:var(--income)}
+.flow-sep{width:1px;background:var(--sep);margin:2px 0}
 .hero-meta{font-size:13.5px;color:var(--text-2)}
 .hero-meta b{color:var(--income)}
 .budget{margin-top:16px;text-align:left}
@@ -310,6 +319,26 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   }
   function perMonth(cycle) { return cycle === "weekly" ? 4.33 : cycle === "fortnightly" ? 2.17 : 1; }
   function cycleLabel(cycle) { return cycle === "weekly" ? "Weekly" : cycle === "fortnightly" ? "Fortnightly" : "Monthly"; }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function fmtDM(d) { return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }); }
+  // The pay cycle window (default fortnightly, anchored to the user's last payday).
+  var DEFAULT_ANCHOR = "2026-01-02";
+  function payCycle() { return state.payCycle || "fortnightly"; }
+  function periodWindow() {
+    var today = parseDate(todayStr()), cyc = payCycle();
+    if (cyc === "monthly") {
+      var s = new Date(today.getFullYear(), today.getMonth(), 1);
+      var e = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      return { start: s, end: e, label: s.toLocaleDateString(undefined, { month: "long" }) };
+    }
+    var days = cyc === "weekly" ? 7 : 14;
+    var anchor = parseDate(state.payAnchor || DEFAULT_ANCHOR);
+    var k = Math.floor((today - anchor) / 86400000 / days);
+    var s2 = addDays(anchor, k * days), e2 = addDays(s2, days);
+    return { start: s2, end: e2, label: fmtDM(s2) + " – " + fmtDM(addDays(e2, -1)) };
+  }
+  function inPeriod(dateStr, w) { var d = parseDate(dateStr); return d >= w.start && d < w.end; }
+  function cycleWord() { var c = payCycle(); return c === "weekly" ? "week" : c === "monthly" ? "month" : "fortnight"; }
 
   /* ---- Rendering ------------------------------------------------------ */
   var viewEl, current;
@@ -325,36 +354,38 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function avatar(p) { return '<div class="avatar" style="background:' + p.color + '">' + initial(p) + "</div>"; }
 
   function renderHome() {
-    var month = new Date().toLocaleDateString(undefined, { month: "long" });
-    var expenses = state.txns.filter(function (t) { return t.type === "expense" && sameMonth(t.date); });
-    var incomes  = state.txns.filter(function (t) { return t.type === "income"  && sameMonth(t.date); });
+    var w = periodWindow();
+    var expenses = state.txns.filter(function (t) { return t.type === "expense" && inPeriod(t.date, w); });
+    var incomes  = state.txns.filter(function (t) { return t.type === "income"  && inPeriod(t.date, w); });
     var spent = expenses.reduce(function (s, t) { return s + t.amount; }, 0);
     var earned = incomes.reduce(function (s, t) { return s + t.amount; }, 0);
-    var budget = state.budget || 0;
-    var pct = budget ? Math.min(100, spent / budget * 100) : 0;
-    var over = budget && spent > budget;
-    var whole = Math.floor(spent), cents = Math.round((spent - whole) * 100);
+    var saved = earned - spent;
+    var usePct = earned > 0 ? Math.min(100, spent / earned * 100) : (spent > 0 ? 100 : 0);
 
     var byCat = {};
     expenses.forEach(function (t) { byCat[t.cat] = (byCat[t.cat] || 0) + t.amount; });
     var cats = Object.keys(byCat).map(function (id) { return { c: cat(id), amt: byCat[id] }; }).sort(function (a, b) { return b.amt - a.amt; });
     var maxCat = cats.length ? cats[0].amt : 1;
 
-    var html = '<div class="head"><div class="head-sub">Bank of Telfer · ' + month + '</div><h1 class="head-title">Spending</h1></div>';
+    var cw = cycleWord();
+    var html = '<div class="head"><div class="head-sub">Bank of Telfer · ' + esc(w.label) + '</div><h1 class="head-title">This ' + cw + '</h1></div>';
     if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to add transactions.</div>';
 
-    html += '<div class="hero"><div class="hero-label">Spent this month</div>' +
-      '<div class="hero-amount">' + money0(whole) + '<span class="cents">.' + String(cents).padStart(2, "0") + '</span></div>' +
-      '<div class="hero-meta">' + (earned ? '<b>+' + money0(earned) + '</b> in · ' : '') + expenses.length + ' transaction' + (expenses.length === 1 ? '' : 's') + '</div>';
-    if (budget) {
-      html += '<div class="budget"><div class="budget-track"><div class="budget-fill" style="width:' + pct + '%;background:' +
-        (over ? 'var(--spend)' : pct > 80 ? '#ff9f0a' : 'var(--accent)') + '"></div></div>' +
-        '<div class="budget-row"><span>' + money0(spent) + ' of ' + money0(budget) + '</span><span>' +
-        (over ? money0(spent - budget) + ' over' : money0(budget - spent) + ' left') + '</span></div></div>';
-    }
-    html += '</div>';
+    // Hero: what you saved this pay cycle, with In / Out beneath.
+    html += '<div class="hero"><div class="hero-label">Saved this ' + cw + '</div>' +
+      '<div class="hero-amount ' + (saved < 0 ? 'neg' : 'pos') + '">' + (saved < 0 ? '−' : '') + money0(Math.abs(saved)) + '</div>' +
+      '<div class="flow">' +
+        '<div class="flow-item"><div class="flow-k">In</div><div class="flow-v pos">' + money0(earned) + '</div></div>' +
+        '<div class="flow-sep"></div>' +
+        '<div class="flow-item"><div class="flow-k">Out</div><div class="flow-v">' + money0(spent) + '</div></div>' +
+      '</div>' +
+      '<div class="budget"><div class="budget-track"><div class="budget-fill" style="width:' + usePct + '%;background:' +
+        (spent > earned ? 'var(--spend)' : 'var(--accent)') + '"></div></div>' +
+        '<div class="budget-row"><span>' + Math.round(usePct) + '% of income spent</span><span>' +
+        (saved >= 0 ? money0(saved) + ' kept' : money0(-saved) + ' over') + '</span></div></div>' +
+      '</div>';
 
-    var warns = buildWarnings(spent, budget, pct);
+    var warns = buildWarnings(earned, spent);
     if (warns.length) {
       html += '<div class="warns">' + warns.map(function (w) {
         return '<div class="warn ' + w.tone + '"><div class="warn-txt">' + w.text + '</div></div>';
@@ -410,10 +441,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     return html;
   }
 
-  function buildWarnings(spent, budget, pct) {
-    var w = [];
-    if (budget && spent > budget) w.push({ tone: "alert", text: "You're <b>" + money0(spent - budget) + " over</b> your " + money0(budget) + " budget this month." });
-    else if (budget && pct >= 80) w.push({ tone: "soft", text: "You've used <b>" + Math.round(pct) + "%</b> of your monthly budget." });
+  function buildWarnings(earned, spent) {
+    var w = [], cw = cycleWord();
+    if (earned > 0 && spent > earned) w.push({ tone: "alert", text: "You've spent <b>" + money0(spent - earned) + " more</b> than came in this " + cw + "." });
+    else if (earned > 0 && spent / earned >= 0.8) w.push({ tone: "soft", text: "You've spent <b>" + Math.round(spent / earned * 100) + "%</b> of what came in this " + cw + "." });
     var soon = state.upcoming.filter(function (u) { var d = Math.round((parseDate(u.date) - parseDate(todayStr())) / 86400000); return d >= 0 && d <= 7; });
     if (soon.length) { var total = soon.reduce(function (s, u) { return s + u.amount; }, 0); w.push({ tone: "soft", text: "<b>" + money0(total) + "</b> in upcoming costs due within 7 days." }); }
     state.recurring.filter(function (r) { var d = Math.round((parseDate(r.next) - parseDate(todayStr())) / 86400000); return d >= 0 && d <= 1; })
@@ -478,11 +509,17 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var html = '<div class="head"><div class="head-sub">Bank of Telfer</div><h1 class="head-title">Settings</h1></div>';
     if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to change settings.</div>';
 
+    var cyc = payCycle();
+    var cycOpts = [["weekly", "Weekly"], ["fortnightly", "Fortnightly"], ["monthly", "Monthly"]];
+    html += '<div class="sec-head"><div class="sec-title">Pay cycle</div></div><div class="rows">';
+    html += '<label class="row"><span>Cycle</span><select class="row-input" id="set-cycle"' + d + '>' +
+      cycOpts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cyc ? ' selected' : '') + '>' + o[1] + '</option>'; }).join("") + '</select></label>';
+    html += '<label class="row"><span>Last payday</span><input class="row-input" id="set-payday" type="date" value="' + (state.payAnchor || DEFAULT_ANCHOR) + '"' + d + ' /></label>';
+    html += '</div>';
+
     html += '<div class="sec-head"><div class="sec-title">Money</div></div><div class="rows">';
     html += '<label class="row"><span>Currency</span><select class="row-input" id="set-cur"' + d + '>' +
       opts.map(function (o) { return '<option' + (o === ccy ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join("") + '</select></label>';
-    html += '<label class="row"><span>Monthly budget</span><input class="row-input" id="set-budget" inputmode="decimal" ' +
-      'value="' + (state.budget || "") + '" placeholder="none"' + d + ' /></label>';
     html += '</div>';
 
     html += '<div class="sec-head"><div class="sec-title">Categories</div></div><div class="rows" id="cat-editor">';
@@ -505,10 +542,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     function commit(fn) { fn(); render(); persist(); }
     var cur = document.getElementById("set-cur");
     cur.addEventListener("change", function () { commit(function () { state.currency = cur.value; }); });
-    var bud = document.getElementById("set-budget");
-    bud.addEventListener("change", function () {
-      commit(function () { var v = parseFloat(bud.value); state.budget = (isFinite(v) && v > 0) ? v : 0; });
-    });
+    var cyc = document.getElementById("set-cycle");
+    cyc.addEventListener("change", function () { commit(function () { state.payCycle = cyc.value; }); });
+    var pd = document.getElementById("set-payday");
+    pd.addEventListener("change", function () { commit(function () { if (pd.value) state.payAnchor = pd.value; }); });
     // Editable categories
     function eCat(id) { return ensureCats().find(function (x) { return x.id === id; }); }
     viewEl.querySelectorAll("[data-cname]").forEach(function (el) {
