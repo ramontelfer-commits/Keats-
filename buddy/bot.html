@@ -178,11 +178,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         '<button class="seg-btn active" data-type="expense">Expense</button>' +
         '<button class="seg-btn" data-type="income">Income</button>' +
       '</div>' +
-      '<label class="field-label">Paid by</label>' +
-      '<div class="seg who-seg" id="who-seg">' +
-        '<button class="seg-btn active" data-who="ramon"><i class="who-dot"></i>Ramon</button>' +
-        '<button class="seg-btn" data-who="sarah"><i class="who-dot"></i>Sarah</button>' +
-      '</div>' +
       '<label class="field-label">Category</label>' +
       '<div class="cat-grid" id="cat-grid"></div>' +
       '<div class="rows">' +
@@ -359,8 +354,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     }
     html += '</div>';
 
-    html += whoPaidCard(expenses);
-
     var warns = buildWarnings(spent, budget, pct);
     if (warns.length) {
       html += '<div class="warns">' + warns.map(function (w) {
@@ -392,11 +385,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   }
 
   function txnRow(t) {
-    var c = cat(t.cat), p = person(t.who);
+    var c = cat(t.cat);
     var sign = t.type === "income" ? "+" : "−";
-    var whoTag = '<span class="who-tag"><i style="background:' + p.color + '"></i>' + esc(p.name) + '</span>';
-    return '<div class="txn" data-edit="txn:' + t.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(t.note || c.name) +
-      '</div><div class="txn-sub">' + esc(c.name) + ' · ' + whoTag + '</div></div>' +
+    var sub = t.note ? '<div class="txn-sub">' + esc(c.name) + '</div>' : '';
+    return '<div class="txn" data-edit="txn:' + t.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(t.note || c.name) + '</div>' + sub + '</div>' +
       '<div class="txn-amt ' + (t.type === "income" ? "income" : "") + '">' + sign + money(t.amount) + '</div>' +
       (readOnly ? '' : '<button class="txn-del" data-del="' + t.id + '" title="Delete">✕</button>') + '</div>';
   }
@@ -493,13 +485,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       'value="' + (state.budget || "") + '" placeholder="none"' + d + ' /></label>';
     html += '</div>';
 
-    html += '<div class="sec-head"><div class="sec-title">People</div></div><div class="rows">';
-    html += '<label class="row"><span><i class="who-dot" style="background:' + person("ramon").color + '"></i> Person 1</span>' +
-      '<input class="row-input" id="set-ramon" maxlength="14" value="' + esc(nameOf("ramon")) + '"' + d + ' /></label>';
-    html += '<label class="row"><span><i class="who-dot" style="background:' + person("sarah").color + '"></i> Person 2</span>' +
-      '<input class="row-input" id="set-sarah" maxlength="14" value="' + esc(nameOf("sarah")) + '"' + d + ' /></label>';
-    html += '</div>';
-
     html += '<div class="sec-head"><div class="sec-title">Categories</div></div><div class="rows" id="cat-editor">';
     html += allCats().map(function (c) {
       var canDel = c.id !== "income" && allCats().length > 2;
@@ -524,11 +509,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     bud.addEventListener("change", function () {
       commit(function () { var v = parseFloat(bud.value); state.budget = (isFinite(v) && v > 0) ? v : 0; });
     });
-    var rn = document.getElementById("set-ramon");
-    rn.addEventListener("change", function () { commit(function () { state.names = state.names || {}; state.names.ramon = rn.value.trim() || "Ramon"; }); });
-    var sn = document.getElementById("set-sarah");
-    sn.addEventListener("change", function () { commit(function () { state.names = state.names || {}; state.names.sarah = sn.value.trim() || "Sarah"; }); });
-
     // Editable categories
     function eCat(id) { return ensureCats().find(function (x) { return x.id === id; }); }
     viewEl.querySelectorAll("[data-cname]").forEach(function (el) {
