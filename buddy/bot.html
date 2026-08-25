@@ -5,7 +5,7 @@
 <div id="root"></div>
 
 <script id="state" type="application/json">
-{"budget":2000,"txns":[{"id":"j98v5mk","amount":5,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"}],"recurring":[{"id":"2hwott6","name":"Income","amount":3090,"type":"income","cat":"income","cycle":"fortnightly","next":"2026-08-27","who":"ramon"}],"upcoming":[]}
+{"budget":2000,"txns":[{"id":"j98v5mk","amount":5,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"},{"id":"v1tgbld","amount":30,"type":"expense","cat":"food","note":"coffee","date":"2026-08-25","who":"ramon"}],"recurring":[{"id":"2hwott6","name":"Income","amount":3090,"type":"income","cat":"income","cycle":"fortnightly","next":"2026-08-27","who":"ramon"}],"upcoming":[]}
 </script>
 
 <script id="main">
@@ -76,6 +76,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .warn.soft{border-left-color:#ff9f0a}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;padding:4px 4px 8px;margin-top:6px}
 .sec-title{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.sec-sub{font-size:13px;color:var(--text-2);font-weight:700;font-variant-numeric:tabular-nums}
+.empty-sm{color:var(--text-2);font-size:13.5px;padding:6px 6px 16px}
+.cat-pct{color:var(--text-3);font-weight:600;font-size:12.5px}
 .cats{display:grid;gap:2px;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:var(--r-md);padding:6px 4px;box-shadow:var(--shadow);margin-bottom:16px}
 .cat-line{display:flex;align-items:center;gap:12px;padding:10px 12px}
 .cat-badge{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;flex:none}
@@ -156,6 +159,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     recurring: svg('<polyline points="17 2 21 6 17 10"/><path d="M3 12V10a4 4 0 0 1 4-4h14"/><polyline points="7 22 3 18 7 14"/><path d="M21 12v2a4 4 0 0 1-4 4H3"/>'),
     upcoming: svg('<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/>'),
     settings: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+    breakdown: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5"/><path d="M12 12l7.4 4.2"/>'),
+    planned: svg('<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><path d="M8 14h5"/>'),
   };
 
   var SHELL =
@@ -164,8 +169,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '<button id="fab" class="fab" aria-label="Add transaction">+</button>' +
       '<nav class="tabbar">' +
         '<button class="tab active" data-view="home">' + ICONS.home + '<span>Spending</span></button>' +
-        '<button class="tab" data-view="recurring">' + ICONS.recurring + '<span>Recurring</span></button>' +
-        '<button class="tab" data-view="upcoming">' + ICONS.upcoming + '<span>Upcoming</span></button>' +
+        '<button class="tab" data-view="breakdown">' + ICONS.breakdown + '<span>Breakdown</span></button>' +
+        '<button class="tab" data-view="planned">' + ICONS.planned + '<span>Planned</span></button>' +
         '<button class="tab" data-view="settings">' + ICONS.settings + '<span>Settings</span></button>' +
       '</nav>' +
     '</div>' +
@@ -358,8 +363,9 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   var viewEl, current;
 
   function render() {
-    if (current === "recurring") renderRecurring();
-    else if (current === "upcoming") renderUpcoming();
+    if (current === "recurring" || current === "upcoming") current = "planned"; // legacy tabs merged
+    if (current === "breakdown") renderBreakdown();
+    else if (current === "planned") renderPlanned();
     else if (current === "settings") renderSettings();
     else renderHome();
   }
@@ -424,14 +430,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         return '<div class="txn" data-edit="recurring:' + x.r.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(x.r.name) +
           '</div><div class="txn-sub">' + relDate(x.date) + ' · repeats ' + cycleLabel(x.r.cycle).toLowerCase() + '</div></div>' +
           '<div class="txn-amt ' + (x.inc ? 'income' : '') + '">' + (x.inc ? '+' : '−') + money(x.r.amount) + '</div></div>';
-      }).join("") + '</div>';
-    }
-
-    if (cats.length) {
-      html += '<div class="sec-head"><div class="sec-title">Categories</div></div><div class="cats">' + cats.map(function (x) {
-        return '<div class="cat-line"><span class="row-ico"><span class="dot-c" style="background:' + x.c.color + '"></span></span>' +
-          '<div class="cat-name">' + esc(x.c.name) + '</div><div class="cat-bar"><i style="width:' + (x.amt / maxCat * 100) + '%;background:' + x.c.color + '"></i></div>' +
-          '<div class="cat-amt">' + money(x.amt) + '</div></div>';
       }).join("") + '</div>';
     }
 
@@ -598,6 +596,79 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     });
   }
 
+  // Category breakdown for the current pay period (transactions + scheduled recurring).
+  function renderBreakdown() {
+    var w = periodWindow();
+    var byCat = {};
+    state.txns.filter(function (t) { return t.type === "expense" && inPeriod(t.date, w); })
+      .forEach(function (t) { byCat[t.cat] = (byCat[t.cat] || 0) + t.amount; });
+    state.recurring.forEach(function (r) {
+      if (rtype(r) === "income") return;
+      occurrencesInWindow(r, w).forEach(function () { byCat[r.cat] = (byCat[r.cat] || 0) + r.amount; });
+    });
+    var cats = Object.keys(byCat).map(function (id) { return { c: cat(id), amt: byCat[id] }; }).sort(function (a, b) { return b.amt - a.amt; });
+    var total = cats.reduce(function (s, x) { return s + x.amt; }, 0);
+    var maxCat = cats.length ? cats[0].amt : 1;
+    var cw = cycleWord();
+
+    var html = '<div class="head"><div class="head-sub">' + esc(w.label) + '</div><h1 class="head-title">Breakdown</h1></div>';
+    html += '<div class="hero"><div class="hero-label">Spent this ' + cw + '</div><div class="hero-amount">' + money0(total) +
+      '</div><div class="hero-meta">across ' + cats.length + ' categor' + (cats.length === 1 ? 'y' : 'ies') + '</div></div>';
+    if (!cats.length) html += emptyState("Nothing spent yet", "Your spending will break down by category here.");
+    else html += '<div class="cats">' + cats.map(function (x) {
+      var pct = total ? Math.round(x.amt / total * 100) : 0;
+      return '<div class="cat-line"><span class="row-ico"><span class="dot-c" style="background:' + x.c.color + '"></span></span>' +
+        '<div class="cat-name">' + esc(x.c.name) + ' <span class="cat-pct">' + pct + '%</span></div>' +
+        '<div class="cat-bar"><i style="width:' + (x.amt / maxCat * 100) + '%;background:' + x.c.color + '"></i></div>' +
+        '<div class="cat-amt">' + money(x.amt) + '</div></div>';
+    }).join("") + '</div>';
+    viewEl.innerHTML = html;
+  }
+
+  // Planned = recurring (repeating) + upcoming (one-off future) on one page.
+  function renderPlanned() {
+    var outMonthly = 0, inMonthly = 0;
+    state.recurring.forEach(function (r) {
+      if (rtype(r) === "income") inMonthly += r.amount * perMonth(r.cycle);
+      else outMonthly += r.amount * perMonth(r.cycle);
+    });
+    var rec = state.recurring.slice().sort(function (a, b) { return a.next < b.next ? -1 : 1; });
+    var up = state.upcoming.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var upTotal = up.reduce(function (s, u) { return s + u.amount; }, 0);
+
+    var html = '<div class="head"><div class="head-sub">Repeating & one-off</div><h1 class="head-title">Planned</h1></div>';
+
+    html += '<div class="sec-head"><div class="sec-title">Recurring</div><div class="sec-sub">' + (outMonthly ? money0(outMonthly) + '/mo' : '') + '</div></div>';
+    if (!rec.length) html += '<div class="empty-sm">No recurring items. Tap + and set Repeat.</div>';
+    else html += '<div class="list">' + rec.map(function (r) {
+      var c = cat(r.cat), inc = rtype(r) === "income";
+      return '<div class="txn" data-edit="recurring:' + r.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(r.name) +
+        '</div><div class="txn-sub">' + cycleLabel(r.cycle) + ' · next ' + relDate(r.next) + '</div></div>' +
+        '<div class="txn-amt ' + (inc ? 'income' : '') + '">' + (inc ? '+' : '') + money(r.amount) + '</div>' +
+        (readOnly ? '' : '<button class="txn-del" data-delr="' + r.id + '">✕</button>') + '</div>';
+    }).join("") + '</div>';
+
+    html += '<div class="sec-head"><div class="sec-title">Upcoming</div><div class="sec-sub">' + (upTotal ? money0(upTotal) + ' total' : '') + '</div></div>';
+    if (!up.length) html += '<div class="empty-sm">Nothing upcoming. Add a future cost with + and a later date.</div>';
+    else html += '<div class="list">' + up.map(function (u) {
+      var c = cat(u.cat);
+      return '<div class="txn" data-edit="upcoming:' + u.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(u.name) +
+        '</div><div class="txn-sub">' + relDate(u.date) + ' · ' + c.name + '</div></div>' +
+        '<div class="txn-amt">−' + money(u.amount) + '</div>' +
+        (readOnly ? '' : '<button class="txn-del" data-delu="' + u.id + '">✕</button>') + '</div>';
+    }).join("") + '</div>';
+
+    viewEl.innerHTML = html;
+    if (readOnly) { wireEdits(); return; }
+    viewEl.querySelectorAll("[data-delr]").forEach(function (b) {
+      b.addEventListener("click", function (e) { e.stopPropagation(); var id = b.getAttribute("data-delr"); state.recurring = state.recurring.filter(function (x) { return x.id !== id; }); render(); persist(); });
+    });
+    viewEl.querySelectorAll("[data-delu]").forEach(function (b) {
+      b.addEventListener("click", function (e) { e.stopPropagation(); var id = b.getAttribute("data-delu"); state.upcoming = state.upcoming.filter(function (x) { return x.id !== id; }); render(); persist(); });
+    });
+    wireEdits();
+  }
+
   function emptyState(title, sub) {
     return '<div class="empty"><div class="empty-title">' + esc(title) + '</div><div class="empty-sub">' + esc(sub) + '</div></div>';
   }
@@ -707,8 +778,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (editing) {
       var e = editing, it = collFor(e.kind).find(function (x) { return x.id === e.id; });
       if (it) {
-        if (e.kind === "recurring") { it.amount = amt; it.type = pickedType; it.cat = pickedCat; it.name = note || cat(pickedCat).name; it.cycle = repeatEl.value || it.cycle; it.next = date; it.who = pickedWho; current = "recurring"; }
-        else if (e.kind === "upcoming") { it.amount = amt; it.cat = pickedCat; it.name = note || cat(pickedCat).name; it.date = date; it.who = pickedWho; current = "upcoming"; }
+        if (e.kind === "recurring") { it.amount = amt; it.type = pickedType; it.cat = pickedCat; it.name = note || cat(pickedCat).name; it.cycle = repeatEl.value || it.cycle; it.next = date; it.who = pickedWho; current = "planned"; }
+        else if (e.kind === "upcoming") { it.amount = amt; it.cat = pickedCat; it.name = note || cat(pickedCat).name; it.date = date; it.who = pickedWho; current = "planned"; }
         else { it.amount = amt; it.type = pickedType; it.cat = pickedCat; it.note = note; it.date = date; it.who = pickedWho; current = "home"; }
       }
       setActiveTab(current); closeSheet(); render(); persist();
@@ -716,8 +787,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     }
 
     var future = parseDate(date) > parseDate(todayStr());
-    if (repeatEl.value) { state.recurring.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, type: pickedType, cat: pickedCat, cycle: repeatEl.value, next: date, who: pickedWho }); current = "recurring"; }
-    else if (future && pickedType === "expense") { state.upcoming.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, date: date, who: pickedWho }); current = "upcoming"; }
+    if (repeatEl.value) { state.recurring.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, type: pickedType, cat: pickedCat, cycle: repeatEl.value, next: date, who: pickedWho }); current = "planned"; }
+    else if (future && pickedType === "expense") { state.upcoming.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, date: date, who: pickedWho }); current = "planned"; }
     else { state.txns.push({ id: uid(), amount: amt, type: pickedType, cat: pickedCat, note: note, date: date, who: pickedWho }); current = "home"; }
     setActiveTab(current); closeSheet(); render(); persist();
   }
@@ -741,6 +812,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
 
     try { pickedWho = localStorage.getItem("bot.who") || "ramon"; } catch (e) {}
     try { current = sessionStorage.getItem("bot.tab") || "home"; } catch (e) { current = "home"; }
+    if (current === "recurring" || current === "upcoming") current = "planned";
 
     document.getElementById("fab").addEventListener("click", openSheet);
     document.getElementById("sheet-cancel").addEventListener("click", closeSheet);
