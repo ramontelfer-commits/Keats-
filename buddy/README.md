@@ -9,10 +9,19 @@ or a bill is about to bite.
 Everything runs in the browser and saves to `localStorage` — no server, no
 account, nothing leaves the page.
 
-> **Note on sharing:** data is saved per-browser, so today each device keeps its
-> own copy — two phones won't sync yet. To make it a truly shared joint account
-> across both your devices, it needs to be hosted with shared storage; that's a
-> small next step, not a rewrite.
+## Two ways to run it
+
+**Shared (recommended) — `bot.html`.** A single self-contained page that stores
+its data *inside itself* and republishes when either person adds or deletes a
+transaction, so every open view live-reloads to the latest. This is the true
+joint account: Ramon and Sarah open the same link and see each other's spending.
+It's published as a private Claude Artifact — share it from the page's share menu
+and add Sarah as an **editor** so she can add transactions too (a view-only
+guest sees a read-only version). Opened outside that shared context, it quietly
+falls back to a local per-browser copy.
+
+**Local — `index.html` + `css/` + `js/`.** The original multi-file version.
+Saves to `localStorage` on one device. Good for solo use or one shared phone.
 
 ## Run it
 
