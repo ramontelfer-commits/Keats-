@@ -18,6 +18,14 @@
   ];
   function cat(id) { return CATS.find(function (c) { return c.id === id; }) || CATS[CATS.length - 1]; }
 
+  // ---- People (the two account holders) --------------------------------
+  var PEOPLE = [
+    { id: "ramon", name: "Ramon", color: "#0a84ff" },
+    { id: "sarah", name: "Sarah", color: "#ff375f" },
+  ];
+  function person(id) { return PEOPLE.find(function (p) { return p.id === id; }) || PEOPLE[0]; }
+  function initial(p) { return p.name.slice(0, 1).toUpperCase(); }
+
   // ---- State ------------------------------------------------------------
   var KEY = "buddy.spend.v1";
   var MONTHLY_BUDGET = 2000; // simple default budget for warnings
@@ -26,7 +34,14 @@
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        var d = JSON.parse(raw);
+        // migrate: older records had no `who`
+        ["txns", "recurring", "upcoming"].forEach(function (k) {
+          (d[k] || []).forEach(function (r) { if (!r.who) r.who = "ramon"; });
+        });
+        return d;
+      }
     } catch (e) {}
     return seed();
   }
@@ -40,11 +55,11 @@
     return {
       budget: MONTHLY_BUDGET,
       txns: [
-        { id: uid(), amount: 4.5, type: "expense", cat: "coffee",   note: "Flat white", date: t },
-        { id: uid(), amount: 82.3, type: "expense", cat: "grocery",  note: "Countdown",  date: ago(1) },
-        { id: uid(), amount: 19,   type: "expense", cat: "transport",note: "Fuel top-up",date: ago(2) },
-        { id: uid(), amount: 2400, type: "income",  cat: "income",   note: "Pay",        date: ago(3) },
-        { id: uid(), amount: 28,   type: "expense", cat: "fun",      note: "Movie night",date: ago(4) },
+        { id: uid(), amount: 4.5, type: "expense", cat: "coffee",   note: "Flat white", date: t,      who: "ramon" },
+        { id: uid(), amount: 82.3, type: "expense", cat: "grocery",  note: "Countdown",  date: ago(1), who: "sarah" },
+        { id: uid(), amount: 19,   type: "expense", cat: "transport",note: "Fuel top-up",date: ago(2), who: "ramon" },
+        { id: uid(), amount: 2400, type: "income",  cat: "income",   note: "Pay",        date: ago(3), who: "sarah" },
+        { id: uid(), amount: 28,   type: "expense", cat: "fun",      note: "Movie night",date: ago(4), who: "ramon" },
       ],
       recurring: [
         { id: uid(), name: "Rent",    amount: 620, cat: "home",  cycle: "weekly",  next: ahead(3) },
@@ -126,7 +141,7 @@
     var maxCat = cats.length ? cats[0].amt : 1;
 
     var html = "";
-    html += '<div class="head"><div class="head-sub">' + month + '</div>' +
+    html += '<div class="head"><div class="head-sub">Bank of Telfer · ' + month + '</div>' +
             '<h1 class="head-title">Spending</h1></div>';
 
     // hero
@@ -145,6 +160,9 @@
         '</span></div></div>';
     }
     html += '</div>';
+
+    // who paid — per-person split + settle up
+    html += whoPaidCard(expenses);
 
     // warnings
     var warns = buildWarnings(spent, budget, pct);
@@ -189,12 +207,47 @@
 
   function txnRow(t) {
     var c = cat(t.cat);
+    var p = person(t.who);
     var sign = t.type === "income" ? "+" : "−";
+    var whoTag = '<span class="who-tag"><i style="background:' + p.color + '"></i>' + esc(p.name) + '</span>';
     return '<div class="txn">' + badge(c) +
       '<div class="txn-body"><div class="txn-name">' + esc(t.note || c.name) +
-      '</div><div class="txn-sub">' + esc(c.name) + '</div></div>' +
+      '</div><div class="txn-sub">' + esc(c.name) + ' · ' + whoTag + '</div></div>' +
       '<div class="txn-amt ' + (t.type === "income" ? "income" : "") + '">' + sign + '$' + money(t.amount) + '</div>' +
       '<button class="txn-del" data-del="' + t.id + '" title="Delete">✕</button></div>';
+  }
+
+  function avatar(p, size) {
+    var s = size || 40;
+    return '<div class="avatar" style="width:' + s + 'px;height:' + s + 'px;background:' + p.color + '">' + initial(p) + '</div>';
+  }
+
+  function whoPaidCard(expenses) {
+    var totals = {};
+    PEOPLE.forEach(function (p) { totals[p.id] = 0; });
+    expenses.forEach(function (t) { if (totals[t.who] != null) totals[t.who] += t.amount; });
+    var a = PEOPLE[0], b = PEOPLE[1];
+    var av = totals[a.id], bv = totals[b.id];
+
+    var html = '<div class="split">' +
+      '<div class="split-person">' + avatar(a) +
+        '<div class="split-amt">$' + money0(av) + '</div><div class="split-name">' + esc(a.name) + '</div></div>' +
+      '<div class="split-mid"></div>' +
+      '<div class="split-person">' + avatar(b) +
+        '<div class="split-amt">$' + money0(bv) + '</div><div class="split-name">' + esc(b.name) + '</div></div>' +
+      '</div>';
+
+    // Settle up: even out who has contributed more to the joint spend.
+    var diff = Math.abs(av - bv);
+    if (diff < 0.5) {
+      html += '<div class="settle even">Even — you\'re square 👍</div>';
+    } else {
+      var owes = av > bv ? b : a;   // paid less → owes
+      var owed = av > bv ? a : b;   // paid more → is owed
+      html += '<div class="settle"><b>' + esc(owes.name) + '</b> owes <b>' + esc(owed.name) +
+        '</b> $' + money(diff / 2) + ' to even up</div>';
+    }
+    return html;
   }
 
   function buildWarnings(spent, budget, pct) {
@@ -306,6 +359,16 @@
   var catGrid = document.getElementById("cat-grid");
   var pickedCat = "food";
   var pickedType = "expense";
+  var pickedWho = loadWho();
+
+  function loadWho() { try { return localStorage.getItem("buddy.who") || "ramon"; } catch (e) { return "ramon"; } }
+  function setWho(id) {
+    pickedWho = id;
+    try { localStorage.setItem("buddy.who", id); } catch (e) {}
+    document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-who") === id);
+    });
+  }
 
   // Build category picker (skip pure-income cat under expense; keep all otherwise)
   function buildCatGrid() {
@@ -328,6 +391,7 @@
     amountEl.value = ""; noteEl.value = ""; repeatEl.value = "";
     dateEl.value = todayStr();
     setType("expense");
+    setWho(pickedWho);
     scrim.classList.remove("hidden"); sheet.classList.remove("hidden");
     requestAnimationFrame(function () { scrim.classList.add("show"); sheet.classList.add("show"); });
     setTimeout(function () { amountEl.focus(); }, 250);
@@ -357,14 +421,14 @@
 
     if (repeatEl.value) {
       // Recurring cost
-      data.recurring.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, cycle: repeatEl.value, next: date });
+      data.recurring.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, cycle: repeatEl.value, next: date, who: pickedWho });
       current = "recurring"; setActiveTab("recurring");
     } else if (future && pickedType === "expense") {
       // Future one-off = upcoming
-      data.upcoming.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, date: date });
+      data.upcoming.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, date: date, who: pickedWho });
       current = "upcoming"; setActiveTab("upcoming");
     } else {
-      data.txns.push({ id: uid(), amount: amt, type: pickedType, cat: pickedCat, note: note, date: date });
+      data.txns.push({ id: uid(), amount: amt, type: pickedType, cat: pickedCat, note: note, date: date, who: pickedWho });
       current = "home"; setActiveTab("home");
     }
     closeSheet();
@@ -378,6 +442,9 @@
   scrim.addEventListener("click", closeSheet);
   document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) {
     b.addEventListener("click", function () { setType(b.getAttribute("data-type")); });
+  });
+  document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) {
+    b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); });
   });
   amountEl.addEventListener("input", function () {
     // keep it numeric-ish
