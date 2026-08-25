@@ -5,25 +5,7 @@
 <div id="root"></div>
 
 <script id="state" type="application/json">
-{
-  "budget": 2000,
-  "txns": [
-    { "id": "s1", "amount": 4.5,  "type": "expense", "cat": "coffee",    "note": "Flat white",  "date": "2026-08-25", "who": "ramon" },
-    { "id": "s2", "amount": 82.3, "type": "expense", "cat": "grocery",   "note": "Countdown",   "date": "2026-08-24", "who": "sarah" },
-    { "id": "s3", "amount": 19,   "type": "expense", "cat": "transport", "note": "Fuel top-up",  "date": "2026-08-23", "who": "ramon" },
-    { "id": "s4", "amount": 2400, "type": "income",  "cat": "income",    "note": "Pay",          "date": "2026-08-22", "who": "sarah" },
-    { "id": "s5", "amount": 28,   "type": "expense", "cat": "fun",       "note": "Movie night",  "date": "2026-08-21", "who": "ramon" }
-  ],
-  "recurring": [
-    { "id": "r1", "name": "Rent",    "amount": 620, "cat": "home",   "cycle": "weekly",      "next": "2026-08-28", "who": "ramon" },
-    { "id": "r2", "name": "Spotify", "amount": 15,  "cat": "fun",    "cycle": "monthly",     "next": "2026-09-03", "who": "sarah" },
-    { "id": "r3", "name": "Gym",     "amount": 22,  "cat": "health", "cycle": "fortnightly", "next": "2026-08-31", "who": "sarah" }
-  ],
-  "upcoming": [
-    { "id": "u1", "name": "Concert ticket", "amount": 89,  "cat": "fun",       "date": "2026-08-30", "who": "sarah" },
-    { "id": "u2", "name": "Car service",    "amount": 240, "cat": "transport", "date": "2026-09-06", "who": "ramon" }
-  ]
-}
+{"budget":2000,"txns":[{"id":"dez4hno","amount":20,"type":"expense","cat":"food","note":"","date":"2026-08-25","who":"ramon"},{"id":"ejlc8ea","amount":300,"type":"income","cat":"income","note":"","date":"2026-08-25","who":"ramon"}],"recurring":[],"upcoming":[]}
 </script>
 
 <script id="main">
@@ -95,6 +77,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .list{background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:var(--r-md);box-shadow:var(--shadow);overflow:hidden}
 .txn{display:flex;align-items:center;gap:13px;padding:12px 15px;position:relative}
 .txn+.txn::before{content:"";position:absolute;top:0;left:52px;right:0;height:1px;background:var(--sep)}
+.txn[data-edit]{cursor:pointer}
+.txn[data-edit]:active{background:var(--card-2)}
+.sheet-del{display:block;width:100%;margin-top:12px;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);color:var(--spend);font-weight:600;font-size:15px;padding:13px;border-radius:var(--r-md);cursor:pointer;box-shadow:var(--shadow);font-family:inherit}
+.sheet-del:active{background:var(--card-2)}
 .dot-c{width:12px;height:12px;border-radius:50%;flex:none;display:inline-block}
 .row-ico{width:24px;display:grid;place-items:center;flex:none}
 .txn-badge{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:16px;font-weight:700;color:#fff;flex:none}
@@ -201,11 +187,12 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '<div class="rows">' +
         '<label class="row"><span>Note</span><input id="note" class="row-input" placeholder="Optional" maxlength="40" /></label>' +
         '<label class="row"><span>Date</span><input id="date" class="row-input" type="date" /></label>' +
-        '<label class="row"><span>Repeat</span><select id="repeat" class="row-input">' +
+        '<label class="row" id="repeat-row"><span>Repeat</span><select id="repeat" class="row-input">' +
           '<option value="">Never</option><option value="weekly">Weekly</option>' +
           '<option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option>' +
         '</select></label>' +
       '</div>' +
+      '<button class="sheet-del hidden" id="sheet-delete">Delete</button>' +
     '</div>';
 
   /* ---- Categories & people -------------------------------------------- */
@@ -407,7 +394,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var c = cat(t.cat), p = person(t.who);
     var sign = t.type === "income" ? "+" : "−";
     var whoTag = '<span class="who-tag"><i style="background:' + p.color + '"></i>' + esc(p.name) + '</span>';
-    return '<div class="txn">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(t.note || c.name) +
+    return '<div class="txn" data-edit="txn:' + t.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(t.note || c.name) +
       '</div><div class="txn-sub">' + esc(c.name) + ' · ' + whoTag + '</div></div>' +
       '<div class="txn-amt ' + (t.type === "income" ? "income" : "") + '">' + sign + money(t.amount) + '</div>' +
       (readOnly ? '' : '<button class="txn-del" data-del="' + t.id + '" title="Delete">✕</button>') + '</div>';
@@ -459,7 +446,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       var sorted = state.recurring.slice().sort(function (a, b) { return a.next < b.next ? -1 : 1; });
       html += '<div class="list">' + sorted.map(function (r) {
         var c = cat(r.cat), inc = rtype(r) === "income";
-        return '<div class="txn">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(r.name) +
+        return '<div class="txn" data-edit="recurring:' + r.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(r.name) +
           '</div><div class="txn-sub">' + cycleLabel(r.cycle) + ' · next ' + relDate(r.next) + '</div></div>' +
           '<div class="txn-amt ' + (inc ? 'income' : '') + '">' + (inc ? '+' : '') + money(r.amount) + '</div>' +
           (readOnly ? '' : '<button class="txn-del" data-delr="' + r.id + '">✕</button>') + '</div>';
@@ -479,7 +466,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     else {
       html += '<div class="list">' + sorted.map(function (u) {
         var c = cat(u.cat);
-        return '<div class="txn">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(u.name) +
+        return '<div class="txn" data-edit="upcoming:' + u.id + '">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(u.name) +
           '</div><div class="txn-sub">' + relDate(u.date) + ' · ' + c.name + '</div></div>' +
           '<div class="txn-amt">' + money(u.amount) + '</div>' +
           (readOnly ? '' : '<button class="txn-del" data-delu="' + u.id + '">✕</button>') + '</div>';
@@ -565,13 +552,24 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (readOnly) return;
     viewEl.querySelectorAll(sel).forEach(function (b) {
       var attr = b.getAttribute("data-del") || b.getAttribute("data-delr") || b.getAttribute("data-delu");
-      b.addEventListener("click", function () { fn(attr); render(); persist(); });
+      b.addEventListener("click", function (e) { e.stopPropagation(); fn(attr); render(); persist(); });
+    });
+    wireEdits();
+  }
+  function wireEdits() {
+    if (readOnly) return;
+    viewEl.querySelectorAll(".txn[data-edit]").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        if (e.target.closest(".txn-del")) return;
+        var parts = el.getAttribute("data-edit").split(":");
+        openEdit(parts[0], parts[1]);
+      });
     });
   }
 
   /* ---- Add sheet ------------------------------------------------------ */
   var sheet, scrim, amountEl, noteEl, dateEl, repeatEl, signEl, catGrid;
-  var pickedCat = "food", pickedType = "expense", pickedWho = "ramon";
+  var pickedCat = "food", pickedType = "expense", pickedWho = "ramon", editing = null;
 
   function buildCatGrid() {
     catGrid.innerHTML = allCats().filter(function (c) { return c.id !== "income" || pickedType === "income"; }).map(function (c) {
@@ -595,23 +593,73 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     try { localStorage.setItem("bot.who", id); } catch (e) {}
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-who") === id); });
   }
+  function showSheet(focus) {
+    var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
+    scrim.classList.remove("hidden"); sheet.classList.remove("hidden"); sheet.scrollTop = 0;
+    requestAnimationFrame(function () { scrim.classList.add("show"); sheet.classList.add("show"); });
+    if (focus) setTimeout(function () { amountEl.focus(); }, 250);
+  }
   function openSheet() {
     if (readOnly) return;
+    editing = null;
+    document.getElementById("sheet-title").textContent = "New transaction";
+    document.getElementById("sheet-save").textContent = "Add";
+    document.getElementById("sheet-delete").classList.add("hidden");
+    document.getElementById("repeat-row").classList.remove("hidden");
     pickedCat = firstExpenseCat(); amountEl.value = ""; noteEl.value = ""; repeatEl.value = ""; dateEl.value = todayStr();
-    var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
     setType("expense"); setWho(pickedWho);
-    scrim.classList.remove("hidden"); sheet.classList.remove("hidden");
-    requestAnimationFrame(function () { scrim.classList.add("show"); sheet.classList.add("show"); });
-    setTimeout(function () { amountEl.focus(); }, 250);
+    showSheet(true);
+  }
+  function collFor(kind) { return kind === "recurring" ? state.recurring : kind === "upcoming" ? state.upcoming : state.txns; }
+  function openEdit(kind, id) {
+    if (readOnly) return;
+    var item = collFor(kind).find(function (x) { return x.id === id; });
+    if (!item) return;
+    editing = { kind: kind, id: id };
+    document.getElementById("sheet-title").textContent =
+      kind === "recurring" ? "Edit recurring" : kind === "upcoming" ? "Edit upcoming" : "Edit transaction";
+    document.getElementById("sheet-save").textContent = "Save";
+    document.getElementById("sheet-delete").classList.remove("hidden");
+    document.getElementById("repeat-row").classList.toggle("hidden", kind !== "recurring");
+    var type = kind === "upcoming" ? "expense" : (item.type || (item.cat === "income" ? "income" : "expense"));
+    setType(type);
+    pickedCat = item.cat; buildCatGrid();
+    setWho(item.who || "ramon");
+    amountEl.value = item.amount;
+    noteEl.value = (kind === "txn") ? (item.note || "") : (item.name || "");
+    dateEl.value = (kind === "recurring") ? item.next : item.date;
+    repeatEl.value = (kind === "recurring") ? item.cycle : "";
+    showSheet(false);
   }
   function closeSheet() {
+    editing = null;
     scrim.classList.remove("show"); sheet.classList.remove("show");
     setTimeout(function () { scrim.classList.add("hidden"); sheet.classList.add("hidden"); }, 300);
+  }
+  function deleteEditing() {
+    if (!editing) return;
+    var e = editing;
+    if (e.kind === "recurring") state.recurring = state.recurring.filter(function (x) { return x.id !== e.id; });
+    else if (e.kind === "upcoming") state.upcoming = state.upcoming.filter(function (x) { return x.id !== e.id; });
+    else state.txns = state.txns.filter(function (x) { return x.id !== e.id; });
+    closeSheet(); render(); persist();
   }
   function saveTxn() {
     var amt = parseFloat(amountEl.value);
     if (!amt || amt <= 0) { amountEl.focus(); return; }
     var date = dateEl.value || todayStr(), note = noteEl.value.trim();
+
+    if (editing) {
+      var e = editing, it = collFor(e.kind).find(function (x) { return x.id === e.id; });
+      if (it) {
+        if (e.kind === "recurring") { it.amount = amt; it.type = pickedType; it.cat = pickedCat; it.name = note || cat(pickedCat).name; it.cycle = repeatEl.value || it.cycle; it.next = date; it.who = pickedWho; current = "recurring"; }
+        else if (e.kind === "upcoming") { it.amount = amt; it.cat = pickedCat; it.name = note || cat(pickedCat).name; it.date = date; it.who = pickedWho; current = "upcoming"; }
+        else { it.amount = amt; it.type = pickedType; it.cat = pickedCat; it.note = note; it.date = date; it.who = pickedWho; current = "home"; }
+      }
+      setActiveTab(current); closeSheet(); render(); persist();
+      return;
+    }
+
     var future = parseDate(date) > parseDate(todayStr());
     if (repeatEl.value) { state.recurring.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, type: pickedType, cat: pickedCat, cycle: repeatEl.value, next: date, who: pickedWho }); current = "recurring"; }
     else if (future && pickedType === "expense") { state.upcoming.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, date: date, who: pickedWho }); current = "upcoming"; }
@@ -642,6 +690,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     document.getElementById("fab").addEventListener("click", openSheet);
     document.getElementById("sheet-cancel").addEventListener("click", closeSheet);
     document.getElementById("sheet-save").addEventListener("click", saveTxn);
+    document.getElementById("sheet-delete").addEventListener("click", deleteEditing);
     scrim.addEventListener("click", closeSheet);
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setType(b.getAttribute("data-type")); }); });
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); }); });
