@@ -184,7 +184,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '</div>' +
       '<div class="amount-wrap">' +
         '<span class="amount-cur" id="amount-cur">$</span>' +
-        '<input id="amount" class="amount" inputmode="decimal" placeholder="0" />' +
+        '<input id="amount" class="amount" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="0" />' +
       '</div>' +
       '<div class="seg" id="type-seg">' +
         '<button class="seg-btn active" data-type="expense">Expense</button>' +
@@ -704,8 +704,9 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
     sizeAmount();
     scrim.classList.remove("hidden"); sheet.classList.remove("hidden"); sheet.scrollTop = 0;
+    // Focus synchronously (inside the tap) so iOS opens the keypad immediately.
+    if (focus) { try { amountEl.focus({ preventScroll: true }); } catch (e) { amountEl.focus(); } }
     requestAnimationFrame(function () { scrim.classList.add("show"); sheet.classList.add("show"); });
-    if (focus) setTimeout(function () { amountEl.focus(); }, 250);
   }
   function openSheet() {
     if (readOnly) return;
