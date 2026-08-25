@@ -111,10 +111,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .sheet-head h2{font-size:16px;font-weight:700;margin:0}
 .link{border:none;background:none;color:var(--accent);font-size:16px;cursor:pointer;padding:4px;font-weight:500}
 .link.strong{font-weight:700}
-.amount-wrap{display:flex;align-items:center;justify-content:center;gap:2px;padding:8px 0 4px}
-.amount-sign{font-size:32px;font-weight:700;color:var(--spend)}
-.amount-cur{font-size:26px;font-weight:700;color:var(--text-2);align-self:flex-start;margin-top:6px}
-.amount{border:none;background:none;outline:none;color:var(--text);font-size:44px;font-weight:800;letter-spacing:-.04em;width:4.5ch;max-width:62vw;text-align:left;font-variant-numeric:tabular-nums;padding:0}
+.amount-wrap{display:flex;align-items:baseline;justify-content:center;gap:3px;padding:14px 0 12px}
+.amount-sign{font-size:28px;font-weight:700;line-height:1;color:var(--spend)}
+.amount-cur{font-size:28px;font-weight:700;line-height:1;color:var(--text-2)}
+.amount{border:none;background:none;outline:none;color:var(--text);font-size:50px;font-weight:800;letter-spacing:-.03em;width:2ch;max-width:58vw;text-align:left;font-variant-numeric:tabular-nums;padding:0;line-height:1}
 .amount::placeholder{color:var(--text-3)}
 .seg{display:flex;background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:13px;padding:3px;margin:4px 0 10px}
 .seg-btn{flex:1;border:none;background:none;cursor:pointer;padding:7px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--text-2);transition:.15s}
@@ -596,8 +596,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     try { localStorage.setItem("bot.who", id); } catch (e) {}
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-who") === id); });
   }
+  function sizeAmount() { amountEl.style.width = Math.max(1, (amountEl.value || "0").length) + "ch"; }
   function showSheet(focus) {
     var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
+    sizeAmount();
     scrim.classList.remove("hidden"); sheet.classList.remove("hidden"); sheet.scrollTop = 0;
     requestAnimationFrame(function () { scrim.classList.add("show"); sheet.classList.add("show"); });
     if (focus) setTimeout(function () { amountEl.focus(); }, 250);
@@ -697,7 +699,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     scrim.addEventListener("click", closeSheet);
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setType(b.getAttribute("data-type")); }); });
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); }); });
-    amountEl.addEventListener("input", function () { this.value = this.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"); });
+    amountEl.addEventListener("input", function () { this.value = this.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"); sizeAmount(); });
     document.querySelectorAll(".tab").forEach(function (t) {
       t.addEventListener("click", function () { current = t.getAttribute("data-view"); setActiveTab(current); render(); });
     });
