@@ -123,10 +123,18 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .sheet-head h2{font-size:16px;font-weight:700;margin:0}
 .link{border:none;background:none;color:var(--accent);font-size:16px;cursor:pointer;padding:4px;font-weight:500}
 .link.strong{font-weight:700}
-.amount-wrap{display:flex;align-items:baseline;justify-content:center;gap:4px;padding:16px 0 14px}
+.amount-wrap{display:flex;align-items:baseline;justify-content:center;gap:4px;padding:14px 0 12px}
 .amount-cur{font-size:27px;font-weight:700;line-height:1;color:var(--text-3)}
-.amount{border:none;background:none;outline:none;color:var(--text);font-size:46px;font-weight:800;letter-spacing:-.03em;width:2ch;max-width:58vw;text-align:left;font-variant-numeric:tabular-nums;padding:0;line-height:1}
-.amount::placeholder{color:var(--text-3)}
+.amount{color:var(--text);font-size:48px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.amount.ph{color:var(--text-3)}
+.amount.shake{animation:shk .4s}
+@keyframes shk{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(4px)}50%{transform:translateX(-6px)}}
+@media (prefers-reduced-motion:reduce){.amount.shake{animation:none}}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.key{border:1px solid var(--glass-brd);background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-radius:15px;font-size:23px;font-weight:600;color:var(--text);padding:13px 0;cursor:pointer;font-family:inherit;box-shadow:var(--shadow);-webkit-tap-highlight-color:transparent}
+.key:active{background:var(--card-2);transform:scale(.97)}
+.key-min{font-weight:700}
+.key-del{color:var(--text-2);font-size:20px}
 .seg{display:flex;background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:13px;padding:3px;margin:4px 0 10px}
 .seg-btn{flex:1;border:none;background:none;cursor:pointer;padding:7px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--text-2);transition:.15s}
 .seg-btn.active{background:var(--glass);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 3px rgba(0,0,0,.14)}
@@ -184,7 +192,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '</div>' +
       '<div class="amount-wrap">' +
         '<span class="amount-cur" id="amount-cur">$</span>' +
-        '<input id="amount" class="amount" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="0" />' +
+        '<span id="amount" class="amount ph">0</span>' +
       '</div>' +
       '<div class="seg" id="type-seg">' +
         '<button class="seg-btn active" data-type="expense">Expense</button>' +
@@ -199,6 +207,20 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
           '<option value="">Never</option><option value="weekly">Weekly</option>' +
           '<option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option>' +
         '</select></label>' +
+      '</div>' +
+      '<div class="keypad" id="keypad">' +
+        '<button type="button" class="key" data-key="1">1</button>' +
+        '<button type="button" class="key" data-key="2">2</button>' +
+        '<button type="button" class="key" data-key="3">3</button>' +
+        '<button type="button" class="key" data-key="4">4</button>' +
+        '<button type="button" class="key" data-key="5">5</button>' +
+        '<button type="button" class="key" data-key="6">6</button>' +
+        '<button type="button" class="key" data-key="7">7</button>' +
+        '<button type="button" class="key" data-key="8">8</button>' +
+        '<button type="button" class="key" data-key="9">9</button>' +
+        '<button type="button" class="key key-min" data-key=".">.</button>' +
+        '<button type="button" class="key" data-key="0">0</button>' +
+        '<button type="button" class="key key-min key-del" data-key="del">⌫</button>' +
       '</div>' +
       '<button class="sheet-del hidden" id="sheet-delete">Delete</button>' +
     '</div>';
@@ -675,7 +697,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
 
   /* ---- Add sheet ------------------------------------------------------ */
   var sheet, scrim, amountEl, noteEl, dateEl, repeatEl, signEl, catGrid;
-  var pickedCat = "food", pickedType = "expense", pickedWho = "ramon", editing = null;
+  var pickedCat = "food", pickedType = "expense", pickedWho = "ramon", editing = null, amountStr = "";
 
   function buildCatGrid() {
     catGrid.innerHTML = allCats().filter(function (c) { return c.id !== "income" || pickedType === "income"; }).map(function (c) {
@@ -699,13 +721,19 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     try { localStorage.setItem("bot.who", id); } catch (e) {}
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-who") === id); });
   }
-  function sizeAmount() { amountEl.style.width = Math.max(1, (amountEl.value || "0").length) + "ch"; }
-  function showSheet(focus) {
+  function setAmount(s) { amountStr = s || ""; amountEl.textContent = amountStr || "0"; amountEl.classList.toggle("ph", !amountStr); }
+  function pressKey(k) {
+    if (k === "del") { setAmount(amountStr.slice(0, -1)); return; }
+    if (k === ".") { if (amountStr.indexOf(".") !== -1) return; setAmount((amountStr || "0") + "."); return; }
+    var s = amountStr === "0" ? "" : amountStr;              // replace a lone leading zero
+    var dec = s.split(".")[1];
+    if (dec && dec.length >= 2) return;                      // max 2 decimal places
+    if (s.replace(".", "").length >= 7) return;              // sane max length
+    setAmount(s + k);
+  }
+  function showSheet() {
     var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
-    sizeAmount();
     scrim.classList.remove("hidden"); sheet.classList.remove("hidden"); sheet.scrollTop = 0;
-    // Focus synchronously (inside the tap) so iOS opens the keypad immediately.
-    if (focus) { try { amountEl.focus({ preventScroll: true }); } catch (e) { amountEl.focus(); } }
     requestAnimationFrame(function () { scrim.classList.add("show"); sheet.classList.add("show"); });
   }
   function openSheet() {
@@ -715,7 +743,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     document.getElementById("sheet-save").textContent = "Add";
     document.getElementById("sheet-delete").classList.add("hidden");
     document.getElementById("repeat-row").classList.remove("hidden");
-    pickedCat = firstExpenseCat(); amountEl.value = ""; noteEl.value = ""; repeatEl.value = ""; dateEl.value = todayStr();
+    pickedCat = firstExpenseCat(); setAmount(""); noteEl.value = ""; repeatEl.value = ""; dateEl.value = todayStr();
     setType("expense"); setWho(pickedWho);
     showSheet(true);
   }
@@ -734,7 +762,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     setType(type);
     pickedCat = item.cat; buildCatGrid();
     setWho(item.who || "ramon");
-    amountEl.value = item.amount;
+    setAmount(String(item.amount));
     noteEl.value = (kind === "txn") ? (item.note || "") : (item.name || "");
     dateEl.value = (kind === "recurring") ? item.next : item.date;
     repeatEl.value = (kind === "recurring") ? item.cycle : "";
@@ -754,8 +782,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     closeSheet(); render(); persist();
   }
   function saveTxn() {
-    var amt = parseFloat(amountEl.value);
-    if (!amt || amt <= 0) { amountEl.focus(); return; }
+    var amt = parseFloat(amountStr);
+    if (!amt || amt <= 0) { amountEl.classList.add("shake"); setTimeout(function () { amountEl.classList.remove("shake"); }, 400); return; }
     var date = dateEl.value || todayStr(), note = noteEl.value.trim();
 
     if (editing) {
@@ -804,7 +832,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     scrim.addEventListener("click", closeSheet);
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setType(b.getAttribute("data-type")); }); });
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); }); });
-    amountEl.addEventListener("input", function () { this.value = this.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"); sizeAmount(); });
+    document.getElementById("keypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) pressKey(el.getAttribute("data-key")); });
     document.querySelectorAll(".tab").forEach(function (t) {
       t.addEventListener("click", function () { current = t.getAttribute("data-view"); setActiveTab(current); render(); });
     });
