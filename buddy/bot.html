@@ -120,10 +120,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .sheet-head h2{font-size:16px;font-weight:700;margin:0}
 .link{border:none;background:none;color:var(--accent);font-size:16px;cursor:pointer;padding:4px;font-weight:500}
 .link.strong{font-weight:700}
-.amount-wrap{display:flex;align-items:baseline;justify-content:center;gap:3px;padding:14px 0 12px}
-.amount-sign{font-size:28px;font-weight:700;line-height:1;color:var(--spend)}
-.amount-cur{font-size:28px;font-weight:700;line-height:1;color:var(--text-2)}
-.amount{border:none;background:none;outline:none;color:var(--text);font-size:50px;font-weight:800;letter-spacing:-.03em;width:2ch;max-width:58vw;text-align:left;font-variant-numeric:tabular-nums;padding:0;line-height:1}
+.amount-wrap{display:flex;align-items:baseline;justify-content:center;gap:4px;padding:16px 0 14px}
+.amount-cur{font-size:27px;font-weight:700;line-height:1;color:var(--text-3)}
+.amount{border:none;background:none;outline:none;color:var(--text);font-size:46px;font-weight:800;letter-spacing:-.03em;width:2ch;max-width:58vw;text-align:left;font-variant-numeric:tabular-nums;padding:0;line-height:1}
 .amount::placeholder{color:var(--text-3)}
 .seg{display:flex;background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:13px;padding:3px;margin:4px 0 10px}
 .seg-btn{flex:1;border:none;background:none;cursor:pointer;padding:7px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--text-2);transition:.15s}
@@ -179,7 +178,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         '<button class="link strong" id="sheet-save">Add</button>' +
       '</div>' +
       '<div class="amount-wrap">' +
-        '<span class="amount-sign" id="amount-sign">−</span>' +
         '<span class="amount-cur" id="amount-cur">$</span>' +
         '<input id="amount" class="amount" inputmode="decimal" placeholder="0" />' +
       '</div>' +
@@ -603,8 +601,6 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function setType(type) {
     pickedType = type;
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-type") === type); });
-    signEl.textContent = type === "income" ? "+" : "−";
-    signEl.style.color = type === "income" ? "var(--income)" : "var(--spend)";
     if (type === "income") pickedCat = "income"; else if (pickedCat === "income") pickedCat = firstExpenseCat();
     buildCatGrid();
   }
@@ -704,7 +700,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     sheet = document.getElementById("sheet"); scrim = document.getElementById("scrim");
     amountEl = document.getElementById("amount"); noteEl = document.getElementById("note");
     dateEl = document.getElementById("date"); repeatEl = document.getElementById("repeat");
-    signEl = document.getElementById("amount-sign"); catGrid = document.getElementById("cat-grid");
+    catGrid = document.getElementById("cat-grid");
 
     try { pickedWho = localStorage.getItem("bot.who") || "ramon"; } catch (e) {}
     try { current = sessionStorage.getItem("bot.tab") || "home"; } catch (e) { current = "home"; }
