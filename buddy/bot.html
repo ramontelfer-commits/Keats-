@@ -45,6 +45,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .head-sub{font-size:15px;color:var(--text-2);font-weight:600}
 .head-title{font-size:34px;font-weight:800;letter-spacing:-.03em;margin:2px 0 0}
 .ro-note{font-size:12px;color:var(--text-2);background:var(--card);border-radius:10px;padding:8px 12px;margin:0 2px 12px;box-shadow:var(--shadow)}
+.settings-hint{font-size:12.5px;color:var(--text-2);text-align:center;padding:16px 12px 0}
+.row>span{display:inline-flex;align-items:center;gap:7px}
+#set-cur.row-input{color:var(--accent);font-weight:600}
 .hero{background:var(--card);border-radius:var(--r-lg);padding:22px;box-shadow:var(--shadow);margin-bottom:16px;text-align:center}
 .hero-label{font-size:13px;color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .hero-amount{font-size:44px;font-weight:800;letter-spacing:-.04em;margin:6px 0 2px}
@@ -151,6 +154,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         '<button class="tab active" data-view="home"><span class="tab-ico">◎</span><span>Spending</span></button>' +
         '<button class="tab" data-view="recurring"><span class="tab-ico">↻</span><span>Recurring</span></button>' +
         '<button class="tab" data-view="upcoming"><span class="tab-ico">◔</span><span>Upcoming</span></button>' +
+        '<button class="tab" data-view="settings"><span class="tab-ico">⚙</span><span>Settings</span></button>' +
       '</nav>' +
     '</div>' +
     '<div class="sheet-scrim hidden" id="scrim"></div>' +
@@ -163,7 +167,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '</div>' +
       '<div class="amount-wrap">' +
         '<span class="amount-sign" id="amount-sign">−</span>' +
-        '<span class="amount-cur">$</span>' +
+        '<span class="amount-cur" id="amount-cur">$</span>' +
         '<input id="amount" class="amount" inputmode="decimal" placeholder="0" />' +
       '</div>' +
       '<div class="seg" id="type-seg">' +
@@ -206,8 +210,12 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     { id: "ramon", name: "Ramon", color: "#0a84ff" },
     { id: "sarah", name: "Sarah", color: "#ff375f" },
   ];
-  function person(id) { return PEOPLE.find(function (p) { return p.id === id; }) || PEOPLE[0]; }
-  function initial(p) { return p.name.slice(0, 1).toUpperCase(); }
+  function nameOf(id) { return (state.names && state.names[id]) || (id === "sarah" ? "Sarah" : "Ramon"); }
+  function person(id) {
+    var base = PEOPLE.find(function (p) { return p.id === id; }) || PEOPLE[0];
+    return { id: base.id, color: base.color, name: nameOf(base.id) };
+  }
+  function initial(p) { return (p.name || "?").slice(0, 1).toUpperCase(); }
 
   /* ---- State: embedded in the page, shared via artifact.publish ------- */
   var LKEY = "bot.spend.local";
@@ -273,8 +281,9 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function dstr(d) { return d.toISOString().slice(0, 10); }
   function todayStr() { return dstr(new Date()); }
   function parseDate(s) { return new Date(s + "T00:00:00"); }
-  function money(n) { return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  function money0(n) { return Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  function symbol() { return (state.currency || "NZ$"); }
+  function money(n) { return symbol() + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function money0(n) { return symbol() + Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -301,6 +310,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function render() {
     if (current === "recurring") renderRecurring();
     else if (current === "upcoming") renderUpcoming();
+    else if (current === "settings") renderSettings();
     else renderHome();
   }
 
@@ -327,13 +337,13 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (readOnly) html += '<div class="ro-note">👁 View-only — ask the owner to share BOT with you as an editor to add transactions.</div>';
 
     html += '<div class="hero"><div class="hero-label">Spent this month</div>' +
-      '<div class="hero-amount">$' + money0(whole) + '<span class="cents">.' + String(cents).padStart(2, "0") + '</span></div>' +
-      '<div class="hero-meta">' + (earned ? '<b>+$' + money0(earned) + '</b> in · ' : '') + expenses.length + ' transaction' + (expenses.length === 1 ? '' : 's') + '</div>';
+      '<div class="hero-amount">' + money0(whole) + '<span class="cents">.' + String(cents).padStart(2, "0") + '</span></div>' +
+      '<div class="hero-meta">' + (earned ? '<b>+' + money0(earned) + '</b> in · ' : '') + expenses.length + ' transaction' + (expenses.length === 1 ? '' : 's') + '</div>';
     if (budget) {
       html += '<div class="budget"><div class="budget-track"><div class="budget-fill" style="width:' + pct + '%;background:' +
         (over ? 'var(--spend)' : pct > 80 ? '#ff9f0a' : 'var(--accent)') + '"></div></div>' +
-        '<div class="budget-row"><span>$' + money0(spent) + ' of $' + money0(budget) + '</span><span>' +
-        (over ? '$' + money0(spent - budget) + ' over' : '$' + money0(budget - spent) + ' left') + '</span></div></div>';
+        '<div class="budget-row"><span>' + money0(spent) + ' of ' + money0(budget) + '</span><span>' +
+        (over ? money0(spent - budget) + ' over' : money0(budget - spent) + ' left') + '</span></div></div>';
     }
     html += '</div>';
 
@@ -350,7 +360,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       html += '<div class="sec-head"><div class="sec-title">Categories</div></div><div class="cats">' + cats.map(function (x) {
         return '<div class="cat-line"><div class="cat-badge" style="background:' + tint(x.c.color, 0.16) + '">' + x.c.emoji + '</div>' +
           '<div class="cat-name">' + esc(x.c.name) + '</div><div class="cat-bar"><i style="width:' + (x.amt / maxCat * 100) + '%;background:' + x.c.color + '"></i></div>' +
-          '<div class="cat-amt">$' + money(x.amt) + '</div></div>';
+          '<div class="cat-amt">' + money(x.amt) + '</div></div>';
       }).join("") + '</div>';
     }
 
@@ -375,42 +385,42 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var whoTag = '<span class="who-tag"><i style="background:' + p.color + '"></i>' + esc(p.name) + '</span>';
     return '<div class="txn">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(t.note || c.name) +
       '</div><div class="txn-sub">' + esc(c.name) + ' · ' + whoTag + '</div></div>' +
-      '<div class="txn-amt ' + (t.type === "income" ? "income" : "") + '">' + sign + '$' + money(t.amount) + '</div>' +
+      '<div class="txn-amt ' + (t.type === "income" ? "income" : "") + '">' + sign + money(t.amount) + '</div>' +
       (readOnly ? '' : '<button class="txn-del" data-del="' + t.id + '" title="Delete">✕</button>') + '</div>';
   }
 
   function whoPaidCard(expenses) {
     var totals = {}; PEOPLE.forEach(function (p) { totals[p.id] = 0; });
     expenses.forEach(function (t) { if (totals[t.who] != null) totals[t.who] += t.amount; });
-    var a = PEOPLE[0], b = PEOPLE[1], av = totals[a.id], bv = totals[b.id];
+    var a = person(PEOPLE[0].id), b = person(PEOPLE[1].id), av = totals[a.id], bv = totals[b.id];
     var html = '<div class="split">' +
-      '<div class="split-person">' + avatar(a) + '<div class="split-amt">$' + money0(av) + '</div><div class="split-name">' + esc(a.name) + '</div></div>' +
+      '<div class="split-person">' + avatar(a) + '<div class="split-amt">' + money0(av) + '</div><div class="split-name">' + esc(a.name) + '</div></div>' +
       '<div class="split-mid"></div>' +
-      '<div class="split-person">' + avatar(b) + '<div class="split-amt">$' + money0(bv) + '</div><div class="split-name">' + esc(b.name) + '</div></div></div>';
+      '<div class="split-person">' + avatar(b) + '<div class="split-amt">' + money0(bv) + '</div><div class="split-name">' + esc(b.name) + '</div></div></div>';
     var diff = Math.abs(av - bv);
     if (diff < 0.5) html += '<div class="settle even">Even — you\'re square 👍</div>';
     else {
       var owes = av > bv ? b : a, owed = av > bv ? a : b;
-      html += '<div class="settle"><b>' + esc(owes.name) + '</b> owes <b>' + esc(owed.name) + '</b> $' + money(diff / 2) + ' to even up</div>';
+      html += '<div class="settle"><b>' + esc(owes.name) + '</b> owes <b>' + esc(owed.name) + '</b> ' + money(diff / 2) + ' to even up</div>';
     }
     return html;
   }
 
   function buildWarnings(spent, budget, pct) {
     var w = [];
-    if (budget && spent > budget) w.push({ tone: "alert", ico: "🚨", text: "You're <b>$" + money0(spent - budget) + " over</b> your $" + money0(budget) + " budget this month." });
+    if (budget && spent > budget) w.push({ tone: "alert", ico: "🚨", text: "You're <b>" + money0(spent - budget) + " over</b> your " + money0(budget) + " budget this month." });
     else if (budget && pct >= 80) w.push({ tone: "soft", ico: "⚠️", text: "You've used <b>" + Math.round(pct) + "%</b> of your monthly budget." });
     var soon = state.upcoming.filter(function (u) { var d = Math.round((parseDate(u.date) - parseDate(todayStr())) / 86400000); return d >= 0 && d <= 7; });
-    if (soon.length) { var total = soon.reduce(function (s, u) { return s + u.amount; }, 0); w.push({ tone: "soft", ico: "📅", text: "<b>$" + money0(total) + "</b> in upcoming costs due within 7 days." }); }
+    if (soon.length) { var total = soon.reduce(function (s, u) { return s + u.amount; }, 0); w.push({ tone: "soft", ico: "📅", text: "<b>" + money0(total) + "</b> in upcoming costs due within 7 days." }); }
     state.recurring.filter(function (r) { var d = Math.round((parseDate(r.next) - parseDate(todayStr())) / 86400000); return d >= 0 && d <= 1; })
-      .forEach(function (r) { w.push({ tone: "soft", ico: "↻", text: "<b>" + esc(r.name) + "</b> ($" + money0(r.amount) + ") is due " + relDate(r.next).toLowerCase() + "." }); });
+      .forEach(function (r) { w.push({ tone: "soft", ico: "↻", text: "<b>" + esc(r.name) + "</b> (" + money0(r.amount) + ") is due " + relDate(r.next).toLowerCase() + "." }); });
     return w;
   }
 
   function renderRecurring() {
     var monthly = state.recurring.reduce(function (s, r) { return s + r.amount * perMonth(r.cycle); }, 0);
     var html = '<div class="head"><div class="head-sub">Fixed costs</div><h1 class="head-title">Recurring</h1></div>';
-    html += '<div class="hero"><div class="hero-label">Est. per month</div><div class="hero-amount">$' + money0(monthly) + '</div>' +
+    html += '<div class="hero"><div class="hero-label">Est. per month</div><div class="hero-amount">' + money0(monthly) + '</div>' +
       '<div class="hero-meta">' + state.recurring.length + ' recurring cost' + (state.recurring.length === 1 ? '' : 's') + '</div></div>';
     if (!state.recurring.length) html += emptyState("↻", "No recurring costs", "Add one with + and set Repeat.");
     else {
@@ -419,7 +429,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         var c = cat(r.cat);
         return '<div class="txn">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(r.name) +
           '</div><div class="txn-sub">' + cycleLabel(r.cycle) + ' · next ' + relDate(r.next) + '</div></div>' +
-          '<div class="txn-amt">$' + money(r.amount) + '</div>' +
+          '<div class="txn-amt">' + money(r.amount) + '</div>' +
           (readOnly ? '' : '<button class="txn-del" data-delr="' + r.id + '">✕</button>') + '</div>';
       }).join("") + '</div>';
     }
@@ -431,7 +441,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     var sorted = state.upcoming.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     var total = sorted.reduce(function (s, u) { return s + u.amount; }, 0);
     var html = '<div class="head"><div class="head-sub">One-off future spends</div><h1 class="head-title">Upcoming</h1></div>';
-    html += '<div class="hero"><div class="hero-label">Total upcoming</div><div class="hero-amount">$' + money0(total) + '</div>' +
+    html += '<div class="hero"><div class="hero-label">Total upcoming</div><div class="hero-amount">' + money0(total) + '</div>' +
       '<div class="hero-meta">' + sorted.length + ' planned</div></div>';
     if (!sorted.length) html += emptyState("📅", "Nothing upcoming", "Plan a future cost — add it with + and pick a date.");
     else {
@@ -439,12 +449,52 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         var c = cat(u.cat);
         return '<div class="txn">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(u.name) +
           '</div><div class="txn-sub">' + relDate(u.date) + ' · ' + c.name + '</div></div>' +
-          '<div class="txn-amt">$' + money(u.amount) + '</div>' +
+          '<div class="txn-amt">' + money(u.amount) + '</div>' +
           (readOnly ? '' : '<button class="txn-del" data-delu="' + u.id + '">✕</button>') + '</div>';
       }).join("") + '</div>';
     }
     viewEl.innerHTML = html;
     wireDeletes("[data-delu]", function (id) { state.upcoming = state.upcoming.filter(function (u) { return u.id !== id; }); });
+  }
+
+  function renderSettings() {
+    var ccy = symbol();
+    var opts = ["NZ$", "AU$", "US$", "£", "€", "¥", "$"];
+    if (opts.indexOf(ccy) === -1) opts.unshift(ccy);
+    var d = readOnly ? " disabled" : "";
+
+    var html = '<div class="head"><div class="head-sub">Bank of Telfer</div><h1 class="head-title">Settings</h1></div>';
+    if (readOnly) html += '<div class="ro-note">👁 View-only — ask the owner to share BOT with you as an editor to change settings.</div>';
+
+    html += '<div class="sec-head"><div class="sec-title">Money</div></div><div class="rows">';
+    html += '<label class="row"><span>Currency</span><select class="row-input" id="set-cur"' + d + '>' +
+      opts.map(function (o) { return '<option' + (o === ccy ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join("") + '</select></label>';
+    html += '<label class="row"><span>Monthly budget</span><input class="row-input" id="set-budget" inputmode="decimal" ' +
+      'value="' + (state.budget || "") + '" placeholder="none"' + d + ' /></label>';
+    html += '</div>';
+
+    html += '<div class="sec-head"><div class="sec-title">People</div></div><div class="rows">';
+    html += '<label class="row"><span><i class="who-dot" style="background:' + person("ramon").color + '"></i> Person 1</span>' +
+      '<input class="row-input" id="set-ramon" maxlength="14" value="' + esc(nameOf("ramon")) + '"' + d + ' /></label>';
+    html += '<label class="row"><span><i class="who-dot" style="background:' + person("sarah").color + '"></i> Person 2</span>' +
+      '<input class="row-input" id="set-sarah" maxlength="14" value="' + esc(nameOf("sarah")) + '"' + d + ' /></label>';
+    html += '</div>';
+    html += '<div class="settings-hint">Changes apply to both of you and sync everywhere BOT is open.</div>';
+
+    viewEl.innerHTML = html;
+    if (readOnly) return;
+
+    function commit(fn) { fn(); render(); persist(); }
+    var cur = document.getElementById("set-cur");
+    cur.addEventListener("change", function () { commit(function () { state.currency = cur.value; }); });
+    var bud = document.getElementById("set-budget");
+    bud.addEventListener("change", function () {
+      commit(function () { var v = parseFloat(bud.value); state.budget = (isFinite(v) && v > 0) ? v : 0; });
+    });
+    var rn = document.getElementById("set-ramon");
+    rn.addEventListener("change", function () { commit(function () { state.names = state.names || {}; state.names.ramon = rn.value.trim() || "Ramon"; }); });
+    var sn = document.getElementById("set-sarah");
+    sn.addEventListener("change", function () { commit(function () { state.names = state.names || {}; state.names.sarah = sn.value.trim() || "Sarah"; }); });
   }
 
   function emptyState(emoji, title, sub) {
@@ -487,6 +537,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   function openSheet() {
     if (readOnly) return;
     pickedCat = "food"; amountEl.value = ""; noteEl.value = ""; repeatEl.value = ""; dateEl.value = todayStr();
+    var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
     setType("expense"); setWho(pickedWho);
     scrim.classList.remove("hidden"); sheet.classList.remove("hidden");
     requestAnimationFrame(function () { scrim.classList.add("show"); sheet.classList.add("show"); });
@@ -514,6 +565,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       var st = document.createElement("style"); st.id = "bot-css"; st.textContent = CSS; document.head.appendChild(st);
     }
     document.getElementById("root").innerHTML = SHELL;
+    // reflect custom names on the Paid-by picker
+    document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) {
+      b.innerHTML = '<i class="who-dot"></i>' + esc(nameOf(b.getAttribute("data-who")));
+    });
     viewEl = document.getElementById("view");
     sheet = document.getElementById("sheet"); scrim = document.getElementById("scrim");
     amountEl = document.getElementById("amount"); noteEl = document.getElementById("note");
