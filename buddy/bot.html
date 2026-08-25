@@ -16,7 +16,7 @@
   /* ---- Styling (injected at runtime + embedded on republish) ---------- */
   var CSS = `
 /* Single clean-white glass theme — intentionally light in every viewer. */
-:root{--bg:#f4f6fb;--card:#fff;--card-2:#eef1f7;--sep:#e7eaf0;--text:#14161c;--text-2:#7c828e;--text-3:#b3b8c2;--accent:#0a84ff;--spend:#ff3b30;--income:#28b463;--who-ramon:#0a84ff;--who-sarah:#ff2d78;--shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(20,25,40,.05),0 14px 36px rgba(20,25,40,.10);--sheet-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 -2px 30px rgba(20,25,40,.12);--r-lg:28px;--r-md:22px;--accent-fade:rgba(10,132,255,.12);--safe-b:env(safe-area-inset-bottom,0px);--glass:rgba(255,255,255,.66);--glass-2:rgba(255,255,255,.5);--glass-brd:rgba(255,255,255,.85);--glass-blur:saturate(170%) blur(22px);--amb1:rgba(10,132,255,.16);--amb2:rgba(255,55,120,.12);--amb3:rgba(40,190,120,.10)}
+:root{--bg:#f3f6f5;--card:#fff;--card-2:#eef2f2;--sep:#e4ebeb;--text:#22333a;--text-2:#75868c;--text-3:#aebbbe;--accent:#3f7d8c;--spend:#c17a6b;--income:#4f9a80;--who-ramon:#3f7d8c;--who-sarah:#c17a8c;--shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(30,45,55,.05),0 14px 36px rgba(30,45,55,.10);--sheet-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 -2px 30px rgba(30,45,55,.12);--r-lg:28px;--r-md:22px;--accent-fade:rgba(63,125,140,.14);--safe-b:env(safe-area-inset-bottom,0px);--glass:rgba(255,255,255,.66);--glass-2:rgba(255,255,255,.5);--glass-brd:rgba(255,255,255,.85);--glass-blur:saturate(170%) blur(22px);--amb1:rgba(135,206,235,.22);--amb2:rgba(119,136,153,.16);--amb3:rgba(173,216,230,.20)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
@@ -105,7 +105,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .empty{text-align:center;color:var(--text-2);padding:48px 20px}
 .empty-title{font-weight:700;font-size:17px;margin:0 0 4px}
 .empty-sub{font-size:14px}
-.fab{position:fixed;right:20px;bottom:calc(96px + var(--safe-b));z-index:30;width:60px;height:60px;border-radius:50%;border:1px solid rgba(255,255,255,.35);cursor:pointer;background:radial-gradient(120% 120% at 30% 22%,#4aa3ff,var(--accent) 60%);color:#fff;font-size:31px;font-weight:300;line-height:1;box-shadow:0 10px 26px rgba(10,132,255,.5),inset 0 1px 0 rgba(255,255,255,.55);transition:transform .12s}
+.fab{position:fixed;right:20px;bottom:calc(96px + var(--safe-b));z-index:30;width:60px;height:60px;border-radius:50%;border:1px solid rgba(255,255,255,.35);cursor:pointer;background:radial-gradient(120% 120% at 30% 22%,#5aa7b5,var(--accent) 60%);color:#fff;font-size:31px;font-weight:300;line-height:1;box-shadow:0 10px 26px rgba(63,125,140,.45),inset 0 1px 0 rgba(255,255,255,.55);transition:transform .12s}
 .fab:active{transform:scale(.9)}
 .tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));z-index:20;width:calc(100% - 24px);max-width:412px;display:flex;gap:2px;padding:7px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);border:1px solid var(--glass-brd);border-radius:32px;box-shadow:var(--shadow),0 14px 36px rgba(0,0,0,.16)}
 .tab{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text-2);font-size:10.5px;font-weight:600;padding:8px 0;border-radius:22px;transition:.2s}
@@ -202,21 +202,21 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
 
   /* ---- Categories & people -------------------------------------------- */
   var DEFAULT_CATS = [
-    { id: "food",     name: "Food",      color: "#ff9f0a" },
-    { id: "grocery",  name: "Groceries", color: "#30b757" },
-    { id: "transport",name: "Transport", color: "#0a84ff" },
-    { id: "coffee",   name: "Coffee",    color: "#a2845e" },
-    { id: "shopping", name: "Shopping",  color: "#bf5af2" },
-    { id: "bills",    name: "Bills",     color: "#5e5ce6" },
-    { id: "fun",      name: "Fun",       color: "#ff375f" },
-    { id: "health",   name: "Health",    color: "#ff453a" },
-    { id: "home",     name: "Home",      color: "#64d2ff" },
-    { id: "income",   name: "Income",    color: "#30b757" },
-    { id: "other",    name: "Other",     color: "#8a8a8e" },
+    { id: "food",     name: "Food",      color: "#e0a458" },
+    { id: "grocery",  name: "Groceries", color: "#6ba36b" },
+    { id: "transport",name: "Transport", color: "#4c86a8" },
+    { id: "coffee",   name: "Coffee",    color: "#a97c5b" },
+    { id: "shopping", name: "Shopping",  color: "#a986c0" },
+    { id: "bills",    name: "Bills",     color: "#6c7bae" },
+    { id: "fun",      name: "Fun",       color: "#d98296" },
+    { id: "health",   name: "Health",    color: "#ce7a6e" },
+    { id: "home",     name: "Home",      color: "#6fb6c6" },
+    { id: "income",   name: "Income",    color: "#4f9a80" },
+    { id: "other",    name: "Other",     color: "#94a0ac" },
   ];
   function monogram(name) { return (String(name || "?").trim()[0] || "?").toUpperCase(); }
   // Palette for new categories (cycled by index / on tap).
-  var PALETTE = ["#ff9f0a","#30b757","#0a84ff","#a2845e","#bf5af2","#5e5ce6","#ff375f","#ff453a","#64d2ff","#ffd60a","#5ac8fa","#8a8a8e"];
+  var PALETTE = ["#e0a458","#6ba36b","#4c86a8","#a97c5b","#a986c0","#6c7bae","#d98296","#ce7a6e","#6fb6c6","#4f9a80","#7c9bb0","#94a0ac"];
   // Categories live in shared state so edits sync; fall back to defaults until edited.
   function allCats() { return (state.cats && state.cats.length) ? state.cats : DEFAULT_CATS; }
   function ensureCats() { if (!state.cats || !state.cats.length) state.cats = DEFAULT_CATS.map(function (c) { return { id: c.id, name: c.name, color: c.color }; }); return state.cats; }
