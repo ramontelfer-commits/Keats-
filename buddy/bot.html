@@ -120,32 +120,33 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .sheet-scrim.show{opacity:1}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:440px;margin:0 auto;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(34px);backdrop-filter:saturate(180%) blur(34px);border-top:1px solid var(--glass-brd);border-radius:34px 34px 0 0;box-shadow:var(--sheet-shadow);padding:8px 18px calc(22px + var(--safe-b));transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:92vh;overflow-y:auto}
 .sheet.show{transform:translateY(0)}
-.sheet-grab{width:38px;height:5px;border-radius:99px;background:var(--text-3);opacity:.5;margin:6px auto 10px}
-.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sheet-grab{width:38px;height:5px;border-radius:99px;background:var(--text-3);opacity:.5;margin:4px auto 8px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .sheet-head h2{font-size:16px;font-weight:700;margin:0}
 .link{border:none;background:none;color:var(--accent);font-size:16px;cursor:pointer;padding:4px;font-weight:500}
 .link.strong{font-weight:700}
-.amount-wrap{display:flex;align-items:center;justify-content:center;gap:2px;padding:18px 0 10px}
-.amount-sign{font-size:40px;font-weight:700;color:var(--spend)}
-.amount-cur{font-size:34px;font-weight:700;color:var(--text-2);align-self:flex-start;margin-top:6px}
-.amount{border:none;background:none;outline:none;color:var(--text);font-size:56px;font-weight:800;letter-spacing:-.04em;width:4.5ch;max-width:62vw;text-align:left;font-variant-numeric:tabular-nums;padding:0}
+.amount-wrap{display:flex;align-items:center;justify-content:center;gap:2px;padding:8px 0 4px}
+.amount-sign{font-size:32px;font-weight:700;color:var(--spend)}
+.amount-cur{font-size:26px;font-weight:700;color:var(--text-2);align-self:flex-start;margin-top:6px}
+.amount{border:none;background:none;outline:none;color:var(--text);font-size:44px;font-weight:800;letter-spacing:-.04em;width:4.5ch;max-width:62vw;text-align:left;font-variant-numeric:tabular-nums;padding:0}
 .amount::placeholder{color:var(--text-3)}
-.seg{display:flex;background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:14px;padding:3px;margin:4px 0 18px}
-.seg-btn{flex:1;border:none;background:none;cursor:pointer;padding:9px;border-radius:11px;font-size:14px;font-weight:600;color:var(--text-2);transition:.15s}
+.seg{display:flex;background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:13px;padding:3px;margin:4px 0 10px}
+.seg-btn{flex:1;border:none;background:none;cursor:pointer;padding:7px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--text-2);transition:.15s}
 .seg-btn.active{background:var(--glass);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 3px rgba(0,0,0,.14)}
+.who-seg{margin-bottom:10px}
 .who-seg .seg-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .who-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
 .who-seg .seg-btn[data-who=ramon] .who-dot{background:var(--who-ramon)}
 .who-seg .seg-btn[data-who=sarah] .who-dot{background:var(--who-sarah)}
-.field-label{font-size:12.5px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;padding:0 4px 8px;display:block}
-.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
-.cat-pick{border:1.5px solid var(--glass-brd);background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-radius:18px;cursor:pointer;padding:14px 4px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:var(--shadow)}
-.cat-pick .dot-c{width:16px;height:16px}
-.cat-pick span{font-size:11px;font-weight:600;color:var(--text-2)}
+.field-label{font-size:11.5px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;padding:0 4px 6px;display:block}
+.cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+.cat-pick{border:1.5px solid var(--glass-brd);background:var(--glass-2);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-radius:13px;cursor:pointer;padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:var(--shadow)}
+.cat-pick .dot-c{width:13px;height:13px}
+.cat-pick span{font-size:9.5px;font-weight:600;color:var(--text-2);line-height:1.1;text-align:center}
 .cat-pick.active{border-color:var(--accent)}
 .cat-pick.active span{color:var(--text)}
 .rows{background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow)}
-.row{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;position:relative}
+.row{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;position:relative}
 .row+.row::before{content:"";position:absolute;top:0;left:15px;right:0;height:1px;background:var(--sep)}
 .row>span{font-size:15px;font-weight:500}
 .row-input{border:none;background:none;outline:none;color:var(--text);font-size:15px;text-align:right;font-family:inherit;max-width:60%}
@@ -440,19 +441,27 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     return w;
   }
 
+  function rtype(r) { return r.type || (r.cat === "income" ? "income" : "expense"); }
+
   function renderRecurring() {
-    var monthly = state.recurring.reduce(function (s, r) { return s + r.amount * perMonth(r.cycle); }, 0);
-    var html = '<div class="head"><div class="head-sub">Fixed costs</div><h1 class="head-title">Recurring</h1></div>';
-    html += '<div class="hero"><div class="hero-label">Est. per month</div><div class="hero-amount">' + money0(monthly) + '</div>' +
-      '<div class="hero-meta">' + state.recurring.length + ' recurring cost' + (state.recurring.length === 1 ? '' : 's') + '</div></div>';
-    if (!state.recurring.length) html += emptyState("No recurring costs", "Add one with + and set Repeat.");
+    var outMonthly = 0, inMonthly = 0;
+    state.recurring.forEach(function (r) {
+      if (rtype(r) === "income") inMonthly += r.amount * perMonth(r.cycle);
+      else outMonthly += r.amount * perMonth(r.cycle);
+    });
+    var n = state.recurring.length;
+    var html = '<div class="head"><div class="head-sub">Repeats automatically</div><h1 class="head-title">Recurring</h1></div>';
+    html += '<div class="hero"><div class="hero-label">Est. costs / month</div><div class="hero-amount">' + money0(outMonthly) + '</div>' +
+      '<div class="hero-meta">' + (inMonthly > 0 ? '<b>+' + money0(inMonthly) + '</b> coming in · ' : '') +
+      n + ' recurring' + '</div></div>';
+    if (!n) html += emptyState("Nothing recurring", "Add one with + and set Repeat.");
     else {
       var sorted = state.recurring.slice().sort(function (a, b) { return a.next < b.next ? -1 : 1; });
       html += '<div class="list">' + sorted.map(function (r) {
-        var c = cat(r.cat);
+        var c = cat(r.cat), inc = rtype(r) === "income";
         return '<div class="txn">' + badge(c) + '<div class="txn-body"><div class="txn-name">' + esc(r.name) +
           '</div><div class="txn-sub">' + cycleLabel(r.cycle) + ' · next ' + relDate(r.next) + '</div></div>' +
-          '<div class="txn-amt">' + money(r.amount) + '</div>' +
+          '<div class="txn-amt ' + (inc ? 'income' : '') + '">' + (inc ? '+' : '') + money(r.amount) + '</div>' +
           (readOnly ? '' : '<button class="txn-del" data-delr="' + r.id + '">✕</button>') + '</div>';
       }).join("") + '</div>';
     }
@@ -604,7 +613,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (!amt || amt <= 0) { amountEl.focus(); return; }
     var date = dateEl.value || todayStr(), note = noteEl.value.trim();
     var future = parseDate(date) > parseDate(todayStr());
-    if (repeatEl.value) { state.recurring.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, cycle: repeatEl.value, next: date, who: pickedWho }); current = "recurring"; }
+    if (repeatEl.value) { state.recurring.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, type: pickedType, cat: pickedCat, cycle: repeatEl.value, next: date, who: pickedWho }); current = "recurring"; }
     else if (future && pickedType === "expense") { state.upcoming.push({ id: uid(), name: note || cat(pickedCat).name, amount: amt, cat: pickedCat, date: date, who: pickedWho }); current = "upcoming"; }
     else { state.txns.push({ id: uid(), amount: amt, type: pickedType, cat: pickedCat, note: note, date: date, who: pickedWho }); current = "home"; }
     setActiveTab(current); closeSheet(); render(); persist();
