@@ -171,6 +171,22 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .row-input::placeholder{color:var(--text-3)}
 select.row-input{appearance:none;-webkit-appearance:none;color:var(--accent);font-weight:600}
 input[type=date].row-input{color:var(--accent);font-weight:600}
+.flow-v.neg{color:var(--spend)}
+.field-label.center{text-align:center;padding:0 0 6px}
+.bkts{display:grid;gap:10px;margin-bottom:16px}
+.bkt{display:block;width:100%;text-align:left;border:1px solid var(--glass-brd);background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-radius:var(--r-md);box-shadow:var(--shadow);padding:14px 16px;cursor:pointer;font-family:inherit;color:var(--text)}
+.bkt:active{background:var(--card-2)}
+.bkt-top{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.bkt-top .dot-c{width:13px;height:13px}
+.bkt-name{font-weight:700;font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bkt-auto{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-fade);padding:2px 8px;border-radius:20px;flex:none;white-space:nowrap}
+.bkt-amt{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;flex:none}
+.bkt-track{height:8px;border-radius:99px;background:var(--card-2);overflow:hidden}
+.bkt-track>i{display:block;height:100%;border-radius:99px;transition:width .4s ease}
+.bkt-meta{font-size:12.5px;color:var(--text-2);margin-top:7px;font-variant-numeric:tabular-nums}
+.bkt-info{text-align:center;font-size:13.5px;color:var(--text-2);padding:0 0 6px}
+.bkt-info b{color:var(--text)}
+.cat-cname.shake,.row-input.shake{animation:shk .4s}
 `;
 
   var svg = function (inner) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; };
@@ -181,7 +197,23 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     settings: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
     breakdown: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5"/><path d="M12 12l7.4 4.2"/>'),
     planned: svg('<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><path d="M8 14h5"/>'),
+    savings: svg('<ellipse cx="12" cy="6.5" rx="7" ry="3"/><path d="M5 6.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5"/><path d="M5 11.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5"/>'),
   };
+
+  // Shared numeric keypad buttons (used by the transaction and bucket sheets).
+  var KEYPAD =
+    '<button type="button" class="key" data-key="1">1</button>' +
+    '<button type="button" class="key" data-key="2">2</button>' +
+    '<button type="button" class="key" data-key="3">3</button>' +
+    '<button type="button" class="key" data-key="4">4</button>' +
+    '<button type="button" class="key" data-key="5">5</button>' +
+    '<button type="button" class="key" data-key="6">6</button>' +
+    '<button type="button" class="key" data-key="7">7</button>' +
+    '<button type="button" class="key" data-key="8">8</button>' +
+    '<button type="button" class="key" data-key="9">9</button>' +
+    '<button type="button" class="key key-min" data-key=".">.</button>' +
+    '<button type="button" class="key" data-key="0">0</button>' +
+    '<button type="button" class="key key-min key-del" data-key="del">⌫</button>';
 
   var SHELL =
     '<div class="phone">' +
@@ -191,6 +223,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
         '<button class="tab active" data-view="home">' + ICONS.home + '<span>Spending</span></button>' +
         '<button class="tab" data-view="breakdown">' + ICONS.breakdown + '<span>Breakdown</span></button>' +
         '<button class="tab" data-view="planned">' + ICONS.planned + '<span>Planned</span></button>' +
+        '<button class="tab" data-view="savings">' + ICONS.savings + '<span>Savings</span></button>' +
         '<button class="tab" data-view="settings">' + ICONS.settings + '<span>Settings</span></button>' +
       '</nav>' +
     '</div>' +
@@ -220,21 +253,35 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
           '<option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option>' +
         '</select></label>' +
       '</div>' +
-      '<div class="keypad" id="keypad">' +
-        '<button type="button" class="key" data-key="1">1</button>' +
-        '<button type="button" class="key" data-key="2">2</button>' +
-        '<button type="button" class="key" data-key="3">3</button>' +
-        '<button type="button" class="key" data-key="4">4</button>' +
-        '<button type="button" class="key" data-key="5">5</button>' +
-        '<button type="button" class="key" data-key="6">6</button>' +
-        '<button type="button" class="key" data-key="7">7</button>' +
-        '<button type="button" class="key" data-key="8">8</button>' +
-        '<button type="button" class="key" data-key="9">9</button>' +
-        '<button type="button" class="key key-min" data-key=".">.</button>' +
-        '<button type="button" class="key" data-key="0">0</button>' +
-        '<button type="button" class="key key-min key-del" data-key="del">⌫</button>' +
-      '</div>' +
+      '<div class="keypad" id="keypad">' + KEYPAD + '</div>' +
       '<button class="sheet-del hidden" id="sheet-delete">Delete</button>' +
+    '</div>' +
+    /* ---- Bucket sheet (create / edit / move money) ---- */
+    '<div class="sheet hidden" id="bsheet">' +
+      '<div class="sheet-grab"></div>' +
+      '<div class="sheet-head">' +
+        '<button class="link" id="bsheet-cancel">Cancel</button>' +
+        '<h2 id="bsheet-title">New bucket</h2>' +
+        '<button class="link strong" id="bsheet-save">Save</button>' +
+      '</div>' +
+      '<div class="bkt-info hidden" id="bkt-info"></div>' +
+      '<label class="field-label center" id="bamount-label">Opening amount (optional)</label>' +
+      '<div class="amount-wrap">' +
+        '<span class="amount-cur" id="bamount-cur">$</span>' +
+        '<span id="bamount" class="amount ph">0</span>' +
+      '</div>' +
+      '<div class="seg hidden" id="bmove-seg">' +
+        '<button class="seg-btn active" data-move="add">Add money</button>' +
+        '<button class="seg-btn" data-move="take">Take out</button>' +
+      '</div>' +
+      '<div class="rows">' +
+        '<label class="row"><span>Name</span><input id="bname" class="row-input" placeholder="e.g. Holiday" maxlength="24" /></label>' +
+        '<label class="row"><span>Goal</span><input id="btarget" class="row-input" inputmode="decimal" placeholder="Optional" /></label>' +
+        '<label class="row"><span>Auto each payday</span><input id="bauto" class="row-input" inputmode="decimal" placeholder="None" /></label>' +
+        '<label class="row"><span>Colour</span><button class="cat-swatch" id="bcolor" type="button"></button></label>' +
+      '</div>' +
+      '<div class="keypad" id="bkeypad">' + KEYPAD + '</div>' +
+      '<button class="sheet-del hidden" id="bsheet-delete">Delete bucket</button>' +
     '</div>';
 
   /* ---- Categories & people -------------------------------------------- */
@@ -281,8 +328,10 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       ["txns", "recurring", "upcoming"].forEach(function (k) {
         (d[k] || []).forEach(function (r) { if (!r.who) r.who = "ramon"; });
       });
+      if (!Array.isArray(d.buckets)) d.buckets = [];
+      d.buckets.forEach(function (b) { if (!Array.isArray(b.moves)) b.moves = []; });
       return d;
-    } catch (e) { return { budget: 2000, txns: [], recurring: [], upcoming: [] }; }
+    } catch (e) { return { budget: 2000, txns: [], recurring: [], upcoming: [], buckets: [] }; }
   }
   function loadLocal() { try { var r = localStorage.getItem(LKEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
   function saveLocal() { try { localStorage.setItem(LKEY, JSON.stringify(state)); } catch (e) {} }
@@ -414,6 +463,38 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     return out;
   }
 
+  /* ---- Savings buckets ------------------------------------------------ */
+  function buckets() { return state.buckets || (state.buckets = []); }
+  function currentPayStart() { var save = periodOffset; periodOffset = 0; var s = periodWindow().start; periodOffset = save; return s; }
+  // Count paydays (pay-cycle start dates) in the inclusive range [from, to].
+  function paydaysBetween(fromStr, toStr) {
+    var from = parseDate(fromStr), to = parseDate(toStr);
+    if (to < from) return 0;
+    var cyc = payCycle();
+    if (cyc === "monthly") {
+      var a = new Date(from.getFullYear(), from.getMonth(), 1);
+      if (a < from) a = new Date(a.getFullYear(), a.getMonth() + 1, 1);
+      var n = 0; for (var d = a; d <= to; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) n++;
+      return n;
+    }
+    var days = cyc === "weekly" ? 7 : 14, anchor = parseDate(state.payAnchor || DEFAULT_ANCHOR);
+    var first = addDays(anchor, Math.ceil((from - anchor) / 86400000 / days) * days);
+    var last = addDays(anchor, Math.floor((to - anchor) / 86400000 / days) * days);
+    if (last < first) return 0;
+    return Math.round((last - first) / 86400000 / days) + 1;
+  }
+  function bucketManual(b) { return (b.moves || []).reduce(function (s, m) { return s + m.amount; }, 0); }
+  function bucketAuto(b) { return (b.auto > 0 && b.autoStart) ? b.auto * paydaysBetween(b.autoStart, todayStr()) : 0; }
+  function bucketBalance(b) { return bucketManual(b) + bucketAuto(b); }
+  // How much landed in this bucket during a given pay window (manual moves + one auto deposit).
+  function bucketSetAside(b, w) {
+    var man = (b.moves || []).filter(function (m) { return inPeriod(m.date, w); }).reduce(function (s, m) { return s + m.amount; }, 0);
+    var auto = (b.auto > 0 && b.autoStart && w.start >= parseDate(b.autoStart) && w.start <= parseDate(todayStr())) ? b.auto : 0;
+    return man + auto;
+  }
+  function totalSetAside(w) { return buckets().reduce(function (s, b) { return s + bucketSetAside(b, w); }, 0); }
+  function totalSaved() { return buckets().reduce(function (s, b) { return s + bucketBalance(b); }, 0); }
+
   /* ---- Rendering ------------------------------------------------------ */
   var viewEl, current;
 
@@ -421,6 +502,7 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     if (current === "recurring" || current === "upcoming") current = "planned"; // legacy tabs merged
     if (current === "breakdown") renderBreakdown();
     else if (current === "planned") renderPlanned();
+    else if (current === "savings") renderSavings();
     else if (current === "settings") renderSettings();
     else renderHome();
   }
@@ -442,7 +524,8 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       });
     });
 
-    var saved = earned - spent;
+    var setAside = totalSetAside(w);
+    var left = earned - spent - setAside;
     var usePct = earned > 0 ? Math.min(100, spent / earned * 100) : (spent > 0 ? 100 : 0);
 
     var cw = cycleWord();
@@ -461,18 +544,20 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
       '</div>';
     if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to add transactions.</div>';
 
-    // Hero: what you saved this pay cycle, with In / Out beneath.
-    html += '<div class="hero"><div class="hero-label">Saved this ' + cw + '</div>' +
-      '<div class="hero-amount ' + (saved < 0 ? 'neg' : 'pos') + '">' + (saved < 0 ? '−' : '') + money0(Math.abs(saved)) + '</div>' +
+    // Hero: the pay cycle split three ways — In, spent Out, and set aside into buckets.
+    html += '<div class="hero"><div class="hero-label">Set aside this ' + cw + '</div>' +
+      '<div class="hero-amount pos">' + money0(setAside) + '</div>' +
       '<div class="flow">' +
         '<div class="flow-item"><div class="flow-k">In</div><div class="flow-v pos">' + money0(earned) + '</div></div>' +
         '<div class="flow-sep"></div>' +
         '<div class="flow-item"><div class="flow-k">Out</div><div class="flow-v">' + money0(spent) + '</div></div>' +
+        '<div class="flow-sep"></div>' +
+        '<div class="flow-item"><div class="flow-k">Left</div><div class="flow-v ' + (left < 0 ? 'neg' : '') + '">' + (left < 0 ? '−' : '') + money0(Math.abs(left)) + '</div></div>' +
       '</div>' +
       '<div class="budget"><div class="budget-track"><div class="budget-fill" style="width:' + usePct + '%;background:' +
         (spent > earned ? 'var(--spend)' : 'var(--accent)') + '"></div></div>' +
         '<div class="budget-row"><span>' + Math.round(usePct) + '% of income spent</span><span>' +
-        (saved >= 0 ? money0(saved) + ' kept' : money0(-saved) + ' over') + '</span></div></div>' +
+        (left >= 0 ? money0(left) + ' left' : money0(-left) + ' over') + '</span></div></div>' +
       '</div>';
 
     var warns = buildWarnings(earned, spent);
@@ -780,16 +865,18 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     try { localStorage.setItem("bot.who", id); } catch (e) {}
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-who") === id); });
   }
-  function setAmount(s) { amountStr = s || ""; amountEl.textContent = amountStr || "0"; amountEl.classList.toggle("ph", !amountStr); }
-  function pressKey(k) {
-    if (k === "del") { setAmount(amountStr.slice(0, -1)); return; }
-    if (k === ".") { if (amountStr.indexOf(".") !== -1) return; setAmount((amountStr || "0") + "."); return; }
-    var s = amountStr === "0" ? "" : amountStr;              // replace a lone leading zero
+  // Pure keypad transform, shared by both sheets' amount displays.
+  function applyKey(str, k) {
+    if (k === "del") return str.slice(0, -1);
+    if (k === ".") return str.indexOf(".") !== -1 ? str : (str || "0") + ".";
+    var s = str === "0" ? "" : str;                          // replace a lone leading zero
     var dec = s.split(".")[1];
-    if (dec && dec.length >= 2) return;                      // max 2 decimal places
-    if (s.replace(".", "").length >= 7) return;              // sane max length
-    setAmount(s + k);
+    if (dec && dec.length >= 2) return str;                  // max 2 decimal places
+    if (s.replace(".", "").length >= 7) return str;          // sane max length
+    return s + k;
   }
+  function setAmount(s) { amountStr = s || ""; amountEl.textContent = amountStr || "0"; amountEl.classList.toggle("ph", !amountStr); }
+  function pressKey(k) { setAmount(applyKey(amountStr, k)); }
   function showSheet() {
     var curEl = document.getElementById("amount-cur"); if (curEl) curEl.textContent = symbol();
     scrim.classList.remove("hidden"); sheet.classList.remove("hidden"); sheet.scrollTop = 0;
@@ -864,6 +951,108 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
   }
   function setActiveTab(v) { document.querySelectorAll(".tab").forEach(function (t) { t.classList.toggle("active", t.getAttribute("data-view") === v); }); }
 
+  /* ---- Savings tab ---------------------------------------------------- */
+  function renderSavings() {
+    var list = buckets();
+    var total = totalSaved();
+    var goalTotal = list.reduce(function (s, b) { return s + (b.target > 0 ? b.target : 0); }, 0);
+
+    var html = '<div class="head"><div class="head-sub">Money set aside</div><h1 class="head-title">Savings</h1></div>';
+    if (readOnly) html += '<div class="ro-note">View-only — ask the owner to share BOT with you as an editor to change savings.</div>';
+
+    html += '<div class="hero"><div class="hero-label">Total saved</div><div class="hero-amount pos">' + money0(total) + '</div>' +
+      '<div class="hero-meta">' + list.length + ' bucket' + (list.length === 1 ? '' : 's') +
+      (goalTotal ? ' · ' + Math.round(Math.min(100, total / goalTotal * 100)) + '% of ' + money0(goalTotal) + ' goals' : '') + '</div></div>';
+
+    if (!list.length) html += emptyState("No buckets yet", "Make one for something you're saving for — a holiday, a rainy day, a new couch.");
+    else html += '<div class="bkts">' + list.slice().sort(function (a, b) { return bucketBalance(b) - bucketBalance(a); }).map(bucketCard).join("") + '</div>';
+
+    if (!readOnly) html += '<button class="add-cat-btn" id="add-bkt">+ New bucket</button>';
+    viewEl.innerHTML = html;
+    if (readOnly) return;
+    document.getElementById("add-bkt").addEventListener("click", function () { openBucket(null); });
+    viewEl.querySelectorAll("[data-bkt]").forEach(function (el) {
+      el.addEventListener("click", function () { openBucket(el.getAttribute("data-bkt")); });
+    });
+  }
+  function bucketCard(b) {
+    var bal = bucketBalance(b), tgt = b.target > 0 ? b.target : 0;
+    var pct = tgt ? Math.min(100, bal / tgt * 100) : (bal > 0 ? 100 : 0);
+    var auto = b.auto > 0 ? '<span class="bkt-auto">+' + money0(b.auto) + '/payday</span>' : '';
+    var meta = tgt ? Math.round(bal / tgt * 100) + '% · ' + money0(bal) + ' of ' + money0(tgt) +
+        (bal < tgt ? ' · ' + money0(tgt - bal) + ' to go' : ' · done') : money0(bal) + ' saved';
+    return '<button class="bkt" data-bkt="' + b.id + '">' +
+      '<div class="bkt-top"><span class="dot-c" style="background:' + b.color + '"></span>' +
+        '<span class="bkt-name">' + esc(b.name) + '</span>' + auto +
+        '<span class="bkt-amt">' + money0(bal) + '</span></div>' +
+      '<div class="bkt-track"><i style="width:' + pct + '%;background:' + b.color + '"></i></div>' +
+      '<div class="bkt-meta">' + meta + '</div></button>';
+  }
+
+  /* ---- Bucket sheet --------------------------------------------------- */
+  var bsheet, bAmountEl, bNameEl, bTargetEl, bAutoEl, bColorEl, editingBucket = null, bAmountStr = "", bMove = "add", bColor = PALETTE[0];
+  function setBAmount(s) { bAmountStr = s || ""; bAmountEl.textContent = bAmountStr || "0"; bAmountEl.classList.toggle("ph", !bAmountStr); }
+  function bAmountLabel() {
+    var l = document.getElementById("bamount-label"); if (!l) return;
+    l.textContent = editingBucket ? (bMove === "take" ? "Take out" : "Add money") : "Opening amount (optional)";
+  }
+  function setBMove(m) {
+    bMove = m;
+    document.querySelectorAll("#bmove-seg .seg-btn").forEach(function (x) { x.classList.toggle("active", x.getAttribute("data-move") === m); });
+    bAmountLabel();
+  }
+  function showBSheet() {
+    document.getElementById("bamount-cur").textContent = symbol();
+    scrim.classList.remove("hidden"); bsheet.classList.remove("hidden"); bsheet.scrollTop = 0;
+    requestAnimationFrame(function () { scrim.classList.add("show"); bsheet.classList.add("show"); });
+  }
+  function closeBSheet() {
+    editingBucket = null;
+    scrim.classList.remove("show"); bsheet.classList.remove("show");
+    setTimeout(function () { scrim.classList.add("hidden"); bsheet.classList.add("hidden"); }, 300);
+  }
+  function openBucket(id) {
+    if (readOnly) return;
+    var b = id ? buckets().find(function (x) { return x.id === id; }) : null;
+    editingBucket = b ? b.id : null;
+    setBAmount(""); setBMove("add");
+    document.getElementById("bsheet-title").textContent = b ? b.name : "New bucket";
+    document.getElementById("bsheet-delete").classList.toggle("hidden", !b);
+    document.getElementById("bmove-seg").classList.toggle("hidden", !b);
+    var info = document.getElementById("bkt-info");
+    if (b) { info.classList.remove("hidden"); info.innerHTML = 'Balance <b>' + money0(bucketBalance(b)) + '</b>' + (b.target > 0 ? ' · Goal ' + money0(b.target) : ''); }
+    else info.classList.add("hidden");
+    bNameEl.value = b ? b.name : "";
+    bTargetEl.value = b && b.target > 0 ? b.target : "";
+    bAutoEl.value = b && b.auto > 0 ? b.auto : "";
+    bColor = b ? b.color : PALETTE[buckets().length % PALETTE.length];
+    bColorEl.style.background = bColor;
+    bAmountLabel();
+    showBSheet();
+  }
+  function saveBucket() {
+    var name = bNameEl.value.trim();
+    if (!name) { bNameEl.classList.add("shake"); setTimeout(function () { bNameEl.classList.remove("shake"); }, 400); bNameEl.focus(); return; }
+    var target = Math.max(0, parseFloat(bTargetEl.value) || 0);
+    var auto = Math.max(0, parseFloat(bAutoEl.value) || 0);
+    var amt = parseFloat(bAmountStr) || 0;
+    var b = editingBucket ? buckets().find(function (x) { return x.id === editingBucket; }) : null;
+    if (!b) { b = { id: uid(), name: name, color: bColor, target: target, auto: auto, autoStart: null, moves: [] }; buckets().push(b); }
+    else { b.name = name; b.color = bColor; b.target = target; b.auto = auto; }
+    if (auto > 0 && !b.autoStart) b.autoStart = ymd(currentPayStart());   // begin accruing from this payday
+    if (amt > 0) {
+      var sign = (editingBucket && bMove === "take") ? -1 : 1;
+      b.moves.push({ id: uid(), amount: sign * amt, date: todayStr(), who: pickedWho });
+    }
+    current = "savings"; periodOffset = 0; setActiveTab("savings"); closeBSheet(); render(); persist();
+  }
+  function deleteBucket() {
+    if (!editingBucket) return;
+    var id = editingBucket;
+    state.buckets = buckets().filter(function (x) { return x.id !== id; });
+    closeBSheet(); render(); persist();
+  }
+
   /* ---- Boot ----------------------------------------------------------- */
   function boot() {
     if (!document.getElementById("bot-css")) {
@@ -884,11 +1073,22 @@ input[type=date].row-input{color:var(--accent);font-weight:600}
     try { current = sessionStorage.getItem("bot.tab") || "home"; } catch (e) { current = "home"; }
     if (current === "recurring" || current === "upcoming") current = "planned";
 
+    bsheet = document.getElementById("bsheet");
+    bAmountEl = document.getElementById("bamount"); bNameEl = document.getElementById("bname");
+    bTargetEl = document.getElementById("btarget"); bAutoEl = document.getElementById("bauto");
+    bColorEl = document.getElementById("bcolor");
+
     document.getElementById("fab").addEventListener("click", openSheet);
     document.getElementById("sheet-cancel").addEventListener("click", closeSheet);
     document.getElementById("sheet-save").addEventListener("click", saveTxn);
     document.getElementById("sheet-delete").addEventListener("click", deleteEditing);
-    scrim.addEventListener("click", closeSheet);
+    document.getElementById("bsheet-cancel").addEventListener("click", closeBSheet);
+    document.getElementById("bsheet-save").addEventListener("click", saveBucket);
+    document.getElementById("bsheet-delete").addEventListener("click", deleteBucket);
+    document.getElementById("bkeypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) setBAmount(applyKey(bAmountStr, el.getAttribute("data-key"))); });
+    document.querySelectorAll("#bmove-seg .seg-btn").forEach(function (x) { x.addEventListener("click", function () { setBMove(x.getAttribute("data-move")); }); });
+    bColorEl.addEventListener("click", function () { var i = PALETTE.indexOf(bColor); bColor = PALETTE[(i + 1) % PALETTE.length]; bColorEl.style.background = bColor; });
+    scrim.addEventListener("click", function () { closeSheet(); closeBSheet(); });
     document.querySelectorAll("#type-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setType(b.getAttribute("data-type")); }); });
     document.querySelectorAll("#who-seg .seg-btn").forEach(function (b) { b.addEventListener("click", function () { setWho(b.getAttribute("data-who")); }); });
     document.getElementById("keypad").addEventListener("click", function (e) { var el = e.target.closest("[data-key]"); if (el) pressKey(el.getAttribute("data-key")); });
